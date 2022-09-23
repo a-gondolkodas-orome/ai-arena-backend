@@ -1,15 +1,15 @@
-import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
-import {juggler} from '@loopback/repository';
+import { inject, lifeCycleObserver, LifeCycleObserver } from "@loopback/core";
+import { juggler } from "@loopback/repository";
 
 const config = {
-  name: 'mongo',
-  connector: require('loopback-connector-mongodb'), // see https://github.com/loopbackio/loopback-datasource-juggler/issues/1866
-  url: 'mongodb://127.0.0.1:27017/ai-arena',
-  host: '',
+  name: "mongo",
+  connector: require("loopback-connector-mongodb"), // see https://github.com/loopbackio/loopback-datasource-juggler/issues/1866
+  url: "mongodb://127.0.0.1:27017/ai-arena",
+  host: "",
   port: 0,
-  user: '',
-  password: '',
-  database: '',
+  user: "",
+  password: "",
+  database: "",
   useNewUrlParser: true,
 };
 
@@ -17,13 +17,16 @@ const config = {
 // application is stopped. This allows the application to be shut down
 // gracefully. The `stop()` method is inherited from `juggler.DataSource`.
 // Learn more at https://loopback.io/doc/en/lb4/Life-cycle.html
-@lifeCycleObserver('datasource')
-export class MongoDataSource extends juggler.DataSource implements LifeCycleObserver {
-  static dataSourceName = 'mongo';
+@lifeCycleObserver("datasource")
+export class MongoDataSource
+  extends juggler.DataSource
+  implements LifeCycleObserver
+{
+  static dataSourceName = "mongo";
   static readonly defaultConfig = config;
 
   constructor(
-    @inject('datasources.config.mongo', {optional: true})
+    @inject("datasources.config.mongo", { optional: true })
     dsConfig: object = config,
   ) {
     super(dsConfig);

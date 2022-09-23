@@ -1,17 +1,20 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository} from '@loopback/repository';
-import {MongoDataSource} from '../datasources';
-import {User} from '../models/user';
-import {Filter} from '@loopback/filter';
-import {Options} from '@loopback/repository/src/common-types';
-import {AccessLevel, Executor, authorize} from '../authorization';
-import {genSalt, hash} from 'bcryptjs';
-import {UserData} from '../models/auth';
-import {ValidationError} from '../errors';
+import { inject } from "@loopback/core";
+import { DefaultCrudRepository } from "@loopback/repository";
+import { MongoDataSource } from "../datasources";
+import { User } from "../models/user";
+import { Filter } from "@loopback/filter";
+import { Options } from "@loopback/repository/src/common-types";
+import { AccessLevel, Executor, authorize } from "../authorization";
+import { genSalt, hash } from "bcryptjs";
+import { UserData } from "../models/auth";
+import { ValidationError } from "../errors";
 
 export class UserRepository {
-  constructor(@inject('datasources.mongo') dataSource: MongoDataSource) {
-    this.repo = new DefaultCrudRepository<User, typeof User.prototype.id, {}>(User, dataSource);
+  constructor(@inject("datasources.mongo") dataSource: MongoDataSource) {
+    this.repo = new DefaultCrudRepository<User, typeof User.prototype.id, {}>(
+      User,
+      dataSource,
+    );
   }
   protected repo: DefaultCrudRepository<User, typeof User.prototype.id, {}>;
 
@@ -36,25 +39,27 @@ export class UserRepository {
   // TODO use some validation library?
   protected async validateCreate(user: UserData) {
     const usernameErrors = [];
-    if (user.username.length === 0) usernameErrors.push('Username must not be empty');
+    if (user.username.length === 0)
+      usernameErrors.push("Username must not be empty");
     const usernameCollision = await this.repo.findOne({
-      where: {username: user.username},
+      where: { username: user.username },
     });
-    if (usernameCollision) usernameErrors.push('Username already in use');
+    if (usernameCollision) usernameErrors.push("Username already in use");
     const emailErrors = [];
-    if (user.email.length === 0) emailErrors.push('Email must not be empty');
+    if (user.email.length === 0) emailErrors.push("Email must not be empty");
     const emailCollision = await this.repo.findOne({
-      where: {email: user.email},
+      where: { email: user.email },
     });
-    if (emailCollision) emailErrors.push('Email already in use');
+    if (emailCollision) emailErrors.push("Email already in use");
     const passwordErrors = [];
-    if (user.password.length === 0) passwordErrors.push('Password must not be empty');
+    if (user.password.length === 0)
+      passwordErrors.push("Password must not be empty");
     if (usernameErrors.length || emailErrors.length || passwordErrors.length) {
       throw new ValidationError({
         fieldErrors: {
-          ...(usernameErrors.length && {username: usernameErrors}),
-          ...(emailErrors.length && {email: emailErrors}),
-          ...(passwordErrors.length && {password: passwordErrors}),
+          ...(usernameErrors.length && { username: usernameErrors }),
+          ...(emailErrors.length && { email: emailErrors }),
+          ...(passwordErrors.length && { password: passwordErrors }),
         },
       });
     }

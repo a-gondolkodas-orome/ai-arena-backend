@@ -1,7 +1,7 @@
-import {field, inputType, objectType} from '@loopback/graphql';
-import {User} from './user';
+import { field, inputType, objectType } from "@loopback/graphql";
+import { User } from "./user";
 
-@inputType({description: 'UserData'})
+@inputType({ description: "UserData" })
 export class UserData {
   @field()
   username: string;
@@ -13,7 +13,7 @@ export class UserData {
   password: string;
 }
 
-@objectType({description: 'RegistrationResponse'})
+@objectType({ description: "RegistrationResponse" })
 export class RegistrationResponse {
   @field()
   token: string;
@@ -22,7 +22,7 @@ export class RegistrationResponse {
   user: User;
 }
 
-@inputType({description: 'Credentials'})
+@inputType({ description: "Credentials" })
 export class Credentials {
   @field()
   email: string;
@@ -31,7 +31,7 @@ export class Credentials {
   password: string;
 }
 
-@objectType({description: 'LoginResponse'})
+@objectType({ description: "LoginResponse" })
 export class LoginResponse {
   @field()
   token: string;

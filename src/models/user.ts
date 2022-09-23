@@ -1,11 +1,11 @@
-import {field, ID, objectType} from '@loopback/graphql';
-import {Entity, model, property} from '@loopback/repository';
+import { field, ID, objectType } from "@loopback/graphql";
+import { Entity, model, property } from "@loopback/repository";
 
-@objectType({description: 'User'})
-@model({settings: {strict: false}})
+@objectType({ description: "User" })
+@model({ settings: { strict: false } })
 export class User extends Entity {
-  @field(type => ID)
-  @property({id: true})
+  @field((type) => ID)
+  @property({ id: true })
   id: string;
 
   @field()
