@@ -1,16 +1,23 @@
-# ai-arena-backend [![Node.js CI](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml/badge.svg)](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml)
+# AI Arena - backend [![Node.js CI](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml/badge.svg)](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml)
 
 This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/lb4/Command-line-interface.html) with the
 [initial project layout](https://loopback.io/doc/en/lb4/Loopback-application-layout.html).
 
-## Install dependencies
+## Setup
 
-By default, dependencies were installed when this application was generated.
-Whenever dependencies in `package.json` are changed, run the following command:
+Install NVM (Node Version Manager)
+* Linux https://github.com/nvm-sh/nvm#installing-and-updating
+* Windows https://github.com/coreybutler/nvm-windows#installation--upgrades
 
-```sh
-yarn install
-```
+Install the latest (Long Term Support) version of Node.js
+* Linux `nvm install --lts`
+* Windows `nvm install lts`
+
+Install yarn (package manager): https://yarnpkg.com/getting-started/install
+
+Clone the repository: `git clone https://github.com/leanil/ai-arena-backend.git`
+
+Install the dependencies: run `yarn` in the repo directoy (`ai-arena-backend`)
 
 ## Run the application
 
