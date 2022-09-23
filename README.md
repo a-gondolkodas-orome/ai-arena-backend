@@ -1,4 +1,4 @@
-# ai-arena-backend
+# ai-arena-backend [![Node.js CI](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml/badge.svg)](https://github.com/leanil/ai-arena-backend/actions/workflows/CI.yml)
 
 This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/lb4/Command-line-interface.html) with the
 [initial project layout](https://loopback.io/doc/en/lb4/Loopback-application-layout.html).
