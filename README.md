@@ -5,6 +5,8 @@ This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/
 
 ## Setup
 
+Install MongoDB: https://www.mongodb.com/docs/manual/installation/#mongodb-installation-tutorials
+
 Install NVM (Node Version Manager)
 * Linux https://github.com/nvm-sh/nvm#installing-and-updating
 * Windows https://github.com/coreybutler/nvm-windows#installation--upgrades
@@ -17,7 +19,7 @@ Install yarn (package manager): https://yarnpkg.com/getting-started/install
 
 Clone the repository: `git clone https://github.com/leanil/ai-arena-backend.git`
 
-Install the dependencies: run `yarn` in the repo directoy (`ai-arena-backend`)
+Install the dependencies: run `yarn` in the repo directory (`ai-arena-backend`)
 
 ## Run the application
 
