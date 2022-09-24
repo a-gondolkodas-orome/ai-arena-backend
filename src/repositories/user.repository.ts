@@ -1,5 +1,5 @@
 import { inject } from "@loopback/core";
-import { DefaultCrudRepository } from "@loopback/repository";
+import { DefaultCrudRepository, Where } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { User } from "../models/user";
 import { Filter } from "@loopback/filter";
@@ -17,6 +17,11 @@ export class UserRepository {
     );
   }
   protected repo: DefaultCrudRepository<User, typeof User.prototype.id, {}>;
+
+  async count(executor: Executor, where?: Where<User>, options?: Options) {
+    authorize(AccessLevel.ADMIN, executor);
+    return this.repo.count(where, options);
+  }
 
   async find(executor: Executor, filter?: Filter<User>, options?: Options) {
     authorize(AccessLevel.ADMIN, executor);
