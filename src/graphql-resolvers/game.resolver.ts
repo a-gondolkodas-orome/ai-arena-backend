@@ -8,48 +8,38 @@ import {
   ResolverData,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { Game, GameData } from "../models/game";
+import { Game, GameData, GameResponse, GamesResponse } from "../models/game";
 import { GameRepository } from "../repositories";
-import { Executor, isExecutor } from "../authorization";
-import { AssertException } from "../errors";
+import { BaseResolver } from "./base.resolver";
+import { handleAuthErrors } from "../models/auth";
 
 @resolver((of) => Game)
-export class GameResolver {
+export class GameResolver extends BaseResolver {
   constructor(
     @repository("GameRepository") readonly gameRepository: GameRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
   ) {
-    const context = resolverData.context;
-    if (!this.isContextWithExecutor(context)) {
-      throw new AssertException({
-        message: "GameResolver: unhandled context structure",
-        values: { context },
-      });
-    }
-    this.executor = context.executor;
+    super(resolverData);
   }
 
-  protected readonly executor: Executor;
-
-  protected isContextWithExecutor(
-    value: unknown,
-  ): value is { executor: Executor } {
-    const context = value as { executor: unknown };
-    return isExecutor(context.executor);
+  @query((returns) => GamesResponse)
+  async getGames(): Promise<typeof GamesResponse> {
+    return handleAuthErrors(async () => ({
+      games: await this.gameRepository.find(this.executor),
+    }));
   }
 
-  @query((returns) => [Game])
-  async games(): Promise<Game[]> {
-    return this.gameRepository.find(this.executor);
+  @query((returns) => GameResponse, { nullable: true })
+  async findGame(@arg("id") id: string): Promise<typeof GameResponse | null> {
+    return handleAuthErrors(() =>
+      this.gameRepository.findOne(this.executor, { where: { id } }),
+    );
   }
 
-  @query((returns) => Game, { nullable: true })
-  async findGame(@arg("id") id: string): Promise<Game | null> {
-    return this.gameRepository.findOne(this.executor, { where: { id } });
-  }
-
-  @mutation((returns) => Game)
-  async createGame(@arg("game") game: GameData): Promise<Game> {
-    return this.gameRepository.create(this.executor, game);
+  @mutation((returns) => GameResponse)
+  async createGame(@arg("game") game: GameData): Promise<typeof GameResponse> {
+    return handleAuthErrors(() =>
+      this.gameRepository.create(this.executor, game),
+    );
   }
 }

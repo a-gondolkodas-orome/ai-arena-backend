@@ -6,7 +6,7 @@ import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
 import { AccessLevel, Executor, authorize } from "../authorization";
 import { genSalt, hash } from "bcryptjs";
-import { UserData } from "../models/auth";
+import { RegistrationData } from "../models/auth";
 import { ValidationError } from "../errors";
 
 export class UserRepository {
@@ -28,7 +28,7 @@ export class UserRepository {
     return this.repo.find(filter, options);
   }
 
-  async create(executor: Executor, user: UserData, options?: Options) {
+  async create(executor: Executor, user: RegistrationData, options?: Options) {
     authorize(AccessLevel.NONE, executor);
     await this.validateCreate(user);
     user.password = await hash(user.password, await genSalt());
@@ -42,7 +42,7 @@ export class UserRepository {
   }
 
   // TODO use some validation library?
-  protected async validateCreate(user: UserData) {
+  protected async validateCreate(user: RegistrationData) {
     const usernameErrors = [];
     if (user.username.length === 0)
       usernameErrors.push("Username must not be empty");

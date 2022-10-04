@@ -6,13 +6,16 @@ import {
   Credentials,
   LoginResponse,
   RegistrationResponse,
-  UserData,
+  RegistrationData,
+  handleAuthErrors,
 } from "../models/auth";
 import { TokenServiceBindings } from "@loopback/authentication-jwt";
 import { TokenService } from "@loopback/authentication";
 import { AiArenaBindings } from "../keys";
 import { UserService } from "../services";
 import { SecurityBindings, UserProfile } from "@loopback/security";
+import { ValidationError, validationErrorCodec } from "../errors";
+import * as t from "io-ts";
 
 @resolver()
 export class AuthResolver {
@@ -25,21 +28,39 @@ export class AuthResolver {
 
   @mutation((returns) => RegistrationResponse)
   async register(
-    @arg("userData") userData: UserData,
-  ): Promise<RegistrationResponse> {
-    const user = await this.userRepository.create(undefined, userData);
-    const userProfile = this.userService.convertToUserProfile(user);
-    const token = await this.jwtService.generateToken(userProfile);
-    return { user, token };
+    @arg("registrationData") registrationData: RegistrationData,
+  ): Promise<typeof RegistrationResponse> {
+    return handleAuthErrors(async () => {
+      try {
+        const user = await this.userRepository.create(
+          undefined,
+          registrationData,
+        );
+        const userProfile = this.userService.convertToUserProfile(user);
+        const token = await this.jwtService.generateToken(userProfile);
+        return { user, token };
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            type: error.data.type,
+            message: error.data.message,
+            ...(error.data as t.TypeOf<typeof validationErrorCodec>),
+          };
+        }
+        throw error;
+      }
+    });
   }
 
   @query((returns) => LoginResponse)
   async login(
     @arg("credentials") credentials: Credentials,
-  ): Promise<LoginResponse> {
-    const user = await this.userService.verifyCredentials(credentials);
-    const userProfile = this.userService.convertToUserProfile(user);
-    const token = await this.jwtService.generateToken(userProfile);
-    return { token };
+  ): Promise<typeof LoginResponse> {
+    return handleAuthErrors(async () => {
+      const user = await this.userService.verifyCredentials(credentials);
+      const userProfile = this.userService.convertToUserProfile(user);
+      const token = await this.jwtService.generateToken(userProfile);
+      return { token };
+    });
   }
 }

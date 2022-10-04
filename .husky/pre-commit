@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-if ! yarn run lint; then
+if ! (yarn run lint && yarn run build); then
   echo "[pre-commit hook] There are problems in your code. The CI will probably reject it."
   if ! sh -c ": >/dev/tty" >/dev/null 2>/dev/null; then
     echo "[pre-commit hook] Console not interactive (/dev/tty not available). Stopping."

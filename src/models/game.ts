@@ -1,5 +1,6 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { Entity, model, property } from "@loopback/repository";
+import { createAuthErrorUnionType } from "./auth";
 
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")
@@ -63,3 +64,25 @@ export class GameData {
   @field()
   playerCount: PlayerCount;
 }
+
+export const GameResponse = createAuthErrorUnionType(
+  "GameResponse",
+  [Game],
+  (value: unknown) =>
+    typeof value === "object" && value && "shortDescription" in value
+      ? Game
+      : undefined,
+);
+
+@objectType()
+export class Games {
+  @field((type) => [Game])
+  games: Game[];
+}
+
+export const GamesResponse = createAuthErrorUnionType(
+  "GamesResponse",
+  [Games],
+  (value: unknown) =>
+    typeof value === "object" && value && "games" in value ? Games : undefined,
+);

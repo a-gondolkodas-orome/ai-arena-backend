@@ -6,54 +6,44 @@ import {
   ResolverData,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { User } from "../models/user";
+import { User, UserResponse, UsersResponse } from "../models/user";
 import { UserRepository } from "../repositories";
-import { Executor, EXECUTOR_SYSTEM, isExecutor } from "../authorization";
+import { EXECUTOR_SYSTEM } from "../authorization";
 import { notNull } from "../utils";
 import { AssertException, AuthenticationError } from "../errors";
+import { handleAuthErrors } from "../models/auth";
+import { BaseResolver } from "./base.resolver";
 
 @resolver((of) => User)
-export class UserResolver {
+export class UserResolver extends BaseResolver {
   constructor(
     @repository("UserRepository") readonly userRepository: UserRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
   ) {
-    const context = resolverData.context;
-    if (!this.isContextWithExecutor(context)) {
-      throw new AssertException({
-        message: "UserResolver: unhandled context structure",
-        values: { context },
-      });
-    }
-    this.executor = context.executor;
+    super(resolverData);
   }
 
-  protected readonly executor: Executor;
-
-  protected isContextWithExecutor(
-    value: unknown,
-  ): value is { executor: Executor } {
-    const context = value as { executor: unknown };
-    return isExecutor(context.executor);
+  @query((returns) => UsersResponse)
+  async users(): Promise<typeof UsersResponse> {
+    return handleAuthErrors(async () => {
+      return { users: await this.userRepository.find(this.executor) };
+    });
   }
 
-  @query((returns) => [User])
-  async users(): Promise<User[]> {
-    return this.userRepository.find(this.executor);
-  }
-
-  @query((returns) => User)
-  async profile(): Promise<User> {
-    if (this.executor === undefined) throw new AuthenticationError({});
-    if (this.executor === EXECUTOR_SYSTEM)
-      throw new AssertException({
-        message: "UserResolver: unexpected executor",
-        values: { executor: this.executor },
-      });
-    return notNull(
-      await this.userRepository.findOne(this.executor, {
-        where: { id: this.executor.id },
-      }),
-    );
+  @query((returns) => UserResponse)
+  async profile(): Promise<typeof UserResponse> {
+    return handleAuthErrors(async () => {
+      if (this.executor === undefined) throw new AuthenticationError({});
+      if (this.executor === EXECUTOR_SYSTEM)
+        throw new AssertException({
+          message: "UserResolver: unexpected executor",
+          values: { executor: this.executor },
+        });
+      return notNull(
+        await this.userRepository.findOne(this.executor, {
+          where: { id: this.executor.id },
+        }),
+      );
+    });
   }
 }
