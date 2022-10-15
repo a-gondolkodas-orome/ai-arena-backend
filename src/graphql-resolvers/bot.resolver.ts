@@ -14,7 +14,7 @@ import { repository } from "@loopback/repository";
 import { AddBotResponse, Bot, BotInput, BotsResponse } from "../models/bot";
 import { BotRepository, GameRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
-import { handleAuthErrors } from "../models/auth";
+import { AuthError, handleAuthErrors } from "../models/auth";
 import { notNull } from "../utils";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
@@ -69,6 +69,13 @@ export class BotResolver
         }
         throw error;
       }
+    });
+  }
+
+  @mutation((returns) => AuthError, { nullable: true })
+  async deleteBot(@arg("botId") botId: string) {
+    return handleAuthErrors(async () => {
+      await this.botRepository.deleteBot(this.executor, botId);
     });
   }
 

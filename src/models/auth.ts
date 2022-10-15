@@ -147,3 +147,9 @@ export const LoginResponse = createAuthErrorUnionType(
       : undefined;
   },
 );
+
+export const AuthError = createUnionType({
+  name: "AuthError",
+  types: () => [GraphqlAuthenticationError, GraphqlAuthorizationError] as const,
+  resolveType: resolveAuthErrorType,
+});

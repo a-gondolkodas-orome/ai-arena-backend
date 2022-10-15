@@ -9,7 +9,7 @@ import { AiArenaBindings } from "../keys";
 import { UserService } from "../services";
 import { assertValue, convertObjectIdsToString } from "../utils";
 import { GameRepository } from "./game.repository";
-import { UserException, ValidationError } from "../errors";
+import { AuthorizationError, ValidationError } from "../errors";
 import { User } from "../models/user";
 
 export class BotRepository {
@@ -77,13 +77,21 @@ export class BotRepository {
     try {
       bot = convertObjectIdsToString(await this.repo.findById(botUpdate.id));
     } catch (error) {
-      throw new UserException({
-        message: "BotRepository.update: Bot not found",
-        values: { id: botUpdate.id, originalError: error.message },
-      });
+      throw new AuthorizationError({});
     }
     authorize(AccessLevel.OWNER, executor, bot.userId);
     await this.repo.updateById(botUpdate.id, botUpdate, options);
+  }
+
+  async deleteBot(executor: Executor, botId: string, options?: Options) {
+    let bot;
+    try {
+      bot = convertObjectIdsToString(await this.repo.findById(botId));
+    } catch (error) {
+      throw new AuthorizationError({});
+    }
+    authorize(AccessLevel.OWNER, executor, bot.userId);
+    await this.repo.deleteById(botId, options);
   }
 
   protected async validateCreate(owner: User, bot: BotInput) {
