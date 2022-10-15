@@ -2,13 +2,11 @@ import { User } from "./models/user";
 import { AuthenticationError, AuthorizationError } from "./errors";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
-// TODO consider using the system user as executor. But make sure only the system can see / use it.
-export type Executor = User | typeof EXECUTOR_SYSTEM | undefined;
+
+export type Executor = User | null;
 
 export function isExecutor(value: unknown): value is Executor {
-  return (
-    value instanceof User || value === EXECUTOR_SYSTEM || value === undefined
-  );
+  return value instanceof User || value === null;
 }
 
 export enum AccessLevel {
@@ -17,13 +15,6 @@ export enum AccessLevel {
   OWNER = "OWNER",
   ADMIN = "ADMIN",
   SYSTEM = "SYSTEM",
-}
-
-export function isAccessLevel(value: unknown): value is AccessLevel {
-  return (
-    typeof value === "string" &&
-    Object.values(AccessLevel).includes(value as AccessLevel)
-  );
 }
 
 export function authorize(
@@ -45,7 +36,7 @@ export function authorize(
     executor instanceof User,
     executor instanceof User && executor.id === resourceOwner,
     executor instanceof User && executor.username === "admin", // TODO handle roles
-    executor === EXECUTOR_SYSTEM,
+    executor instanceof User && executor.username === EXECUTOR_SYSTEM, // and here as well
   ].lastIndexOf(true);
   if (requiredAccessLevel !== AccessLevel.NONE && !executor)
     throw new AuthenticationError({});

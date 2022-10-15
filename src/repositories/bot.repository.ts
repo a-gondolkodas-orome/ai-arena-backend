@@ -4,12 +4,7 @@ import { MongoDataSource } from "../datasources";
 import { Bot, BotInput } from "../models/bot";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
-import {
-  AccessLevel,
-  authorize,
-  Executor,
-  EXECUTOR_SYSTEM,
-} from "../authorization";
+import { AccessLevel, authorize, Executor } from "../authorization";
 import { AiArenaBindings } from "../keys";
 import { UserService } from "../services";
 import { assertValue, convertObjectIdsToString } from "../utils";
@@ -42,13 +37,9 @@ export class BotRepository {
   ) {
     authorize(AccessLevel.USER, executor);
     assertValue(executor);
-    const owner =
-      executor === EXECUTOR_SYSTEM
-        ? await this.userService.getSystemUser()
-        : executor;
     return (
       await this.repo.find(
-        { ...filter, where: { ...filter?.where, userId: owner.id } },
+        { ...filter, where: { ...filter?.where, userId: executor.id } },
         options,
       )
     ).map((bot) => convertObjectIdsToString(bot));
@@ -63,16 +54,12 @@ export class BotRepository {
   async create(executor: Executor, bot: BotInput, options?: Options) {
     authorize(AccessLevel.USER, executor);
     assertValue(executor);
-    const owner =
-      executor === EXECUTOR_SYSTEM
-        ? await this.userService.getSystemUser()
-        : executor;
-    await this.validateCreate(owner, bot);
+    await this.validateCreate(executor, bot);
     return convertObjectIdsToString(
       await this.repo.create(
         {
           ...bot,
-          userId: owner.id,
+          userId: executor.id,
           versionNumber: 0,
         },
         options,

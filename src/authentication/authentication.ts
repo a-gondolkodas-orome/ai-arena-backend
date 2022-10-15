@@ -12,12 +12,12 @@ export async function authenticateRequest(
   try {
     result = await authStrategy.authenticate(request);
   } catch (error) {
-    if (error instanceof HttpErrors.Unauthorized) return undefined;
+    if (error instanceof HttpErrors.Unauthorized) return null;
     throw error;
   }
   return !(result instanceof RedirectRoute) && result?.id
     ? (await userRepository._systemAccess.findOne({
         where: { id: result.id },
-      })) ?? undefined
-    : undefined;
+      })) ?? null
+    : null;
 }

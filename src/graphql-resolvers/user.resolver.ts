@@ -8,9 +8,8 @@ import {
 import { repository } from "@loopback/repository";
 import { User, UserResponse, UsersResponse } from "../models/user";
 import { UserRepository } from "../repositories";
-import { EXECUTOR_SYSTEM } from "../authorization";
 import { notNull } from "../utils";
-import { AssertException, AuthenticationError } from "../errors";
+import { AuthenticationError } from "../errors";
 import { handleAuthErrors } from "../models/auth";
 import { BaseResolver } from "./base.resolver";
 
@@ -33,12 +32,7 @@ export class UserResolver extends BaseResolver {
   @query((returns) => UserResponse)
   async profile(): Promise<typeof UserResponse> {
     return handleAuthErrors(async () => {
-      if (this.executor === undefined) throw new AuthenticationError({});
-      if (this.executor === EXECUTOR_SYSTEM)
-        throw new AssertException({
-          message: "UserResolver: unexpected executor",
-          values: { executor: this.executor },
-        });
+      if (this.executor === null) throw new AuthenticationError({});
       return notNull(
         await this.userRepository.findOne(this.executor, {
           where: { id: this.executor.id },

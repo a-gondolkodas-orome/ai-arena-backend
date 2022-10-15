@@ -32,10 +32,7 @@ export class AuthResolver {
   ): Promise<typeof RegistrationResponse> {
     return handleAuthErrors(async () => {
       try {
-        const user = await this.userRepository.create(
-          undefined,
-          registrationData,
-        );
+        const user = await this.userRepository.create(null, registrationData);
         const userProfile = this.userService.convertToUserProfile(user);
         const token = await this.jwtService.generateToken(userProfile);
         return { user, token };
