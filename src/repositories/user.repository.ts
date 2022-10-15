@@ -4,10 +4,16 @@ import { MongoDataSource } from "../datasources";
 import { User } from "../models/user";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
-import { AccessLevel, Executor, authorize } from "../authorization";
+import {
+  AccessLevel,
+  Executor,
+  authorize,
+  EXECUTOR_SYSTEM,
+} from "../authorization";
 import { genSalt, hash } from "bcryptjs";
-import { RegistrationData } from "../models/auth";
+import { RegistrationInput } from "../models/auth";
 import { ValidationError } from "../errors";
+import { notNull } from "../utils";
 
 export class UserRepository {
   constructor(@inject("datasources.mongo") dataSource: MongoDataSource) {
@@ -16,7 +22,12 @@ export class UserRepository {
       dataSource,
     );
   }
+
   protected repo: DefaultCrudRepository<User, typeof User.prototype.id, {}>;
+
+  get _systemAccess() {
+    return this.repo;
+  }
 
   async count(executor: Executor, where?: Where<User>, options?: Options) {
     authorize(AccessLevel.ADMIN, executor);
@@ -28,7 +39,7 @@ export class UserRepository {
     return this.repo.find(filter, options);
   }
 
-  async create(executor: Executor, user: RegistrationData, options?: Options) {
+  async create(executor: Executor, user: RegistrationInput, options?: Options) {
     authorize(AccessLevel.NONE, executor);
     await this.validateCreate(user);
     user.password = await hash(user.password, await genSalt());
@@ -41,8 +52,15 @@ export class UserRepository {
     return user;
   }
 
+  /** Don't use this. If you need the system user, get it from UserService. */
+  async _getSystemUser() {
+    return notNull(
+      await this.repo.findOne({ where: { username: EXECUTOR_SYSTEM } }),
+    );
+  }
+
   // TODO use some validation library?
-  protected async validateCreate(user: RegistrationData) {
+  protected async validateCreate(user: RegistrationInput) {
     const usernameErrors = [];
     if (user.username.length === 0)
       usernameErrors.push("Username must not be empty");

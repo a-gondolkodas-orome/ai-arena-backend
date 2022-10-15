@@ -2,6 +2,7 @@ import { User } from "./models/user";
 import { AuthenticationError, AuthorizationError } from "./errors";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
+// TODO consider using the system user as executor. But make sure only the system can see / use it.
 export type Executor = User | typeof EXECUTOR_SYSTEM | undefined;
 
 export function isExecutor(value: unknown): value is Executor {

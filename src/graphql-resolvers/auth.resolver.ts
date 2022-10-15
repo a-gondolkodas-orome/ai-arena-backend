@@ -6,7 +6,7 @@ import {
   Credentials,
   LoginResponse,
   RegistrationResponse,
-  RegistrationData,
+  RegistrationInput,
   handleAuthErrors,
 } from "../models/auth";
 import { TokenServiceBindings } from "@loopback/authentication-jwt";
@@ -28,7 +28,7 @@ export class AuthResolver {
 
   @mutation((returns) => RegistrationResponse)
   async register(
-    @arg("registrationData") registrationData: RegistrationData,
+    @arg("registrationData") registrationData: RegistrationInput,
   ): Promise<typeof RegistrationResponse> {
     return handleAuthErrors(async () => {
       try {

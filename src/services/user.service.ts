@@ -4,7 +4,6 @@ import { securityId, UserProfile } from "@loopback/security";
 import { compare } from "bcryptjs";
 import { UserRepository } from "../repositories";
 import { User } from "../models/user";
-import { EXECUTOR_SYSTEM } from "../authorization";
 import { AssertException, AuthenticationError } from "../errors";
 
 export type Credentials = {
@@ -18,7 +17,10 @@ export class UserService implements AuthUserService<User, Credentials> {
   ) {}
 
   async verifyCredentials(credentials: Credentials): Promise<User> {
-    const users = await this.userRepository.find(EXECUTOR_SYSTEM, {
+    if (credentials.email.length === 0) {
+      throw new AuthenticationError({ message: "Invalid email or password." });
+    }
+    const users = await this.userRepository._systemAccess.find({
       where: { email: credentials.email },
     });
     if (users.length > 1) {
@@ -43,5 +45,14 @@ export class UserService implements AuthUserService<User, Credentials> {
       id: user.id,
       email: user.email,
     };
+  }
+
+  protected systemUser?: User;
+
+  async getSystemUser() {
+    if (!this.systemUser) {
+      this.systemUser = await this.userRepository._getSystemUser();
+    }
+    return this.systemUser;
   }
 }

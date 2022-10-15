@@ -1,28 +1,43 @@
-import { LifeCycleObserver } from "@loopback/core";
-import { repository } from "@loopback/repository";
-import { GameRepository, UserRepository } from "../repositories";
+import { inject, LifeCycleObserver } from "@loopback/core";
+import { DefaultCrudRepository } from "@loopback/repository";
 import { EXECUTOR_SYSTEM } from "../authorization";
+import { MongoDataSource } from "../datasources";
+import { Game } from "../models/game";
+import { User } from "../models/user";
 
 export class DatabaseSeedObserver implements LifeCycleObserver {
   constructor(
-    @repository("UserRepository")
-    protected userRepo: UserRepository,
-    @repository("GameRepository")
-    protected gameRepo: GameRepository,
-  ) {}
+    @inject("datasources.mongo")
+    dataSource: MongoDataSource,
+  ) {
+    this.userRepo = new DefaultCrudRepository(User, dataSource);
+    this.gameRepo = new DefaultCrudRepository(Game, dataSource);
+  }
+
+  protected userRepo: DefaultCrudRepository<User, typeof User.prototype.id, {}>;
+  protected gameRepo: DefaultCrudRepository<Game, typeof Game.prototype.id, {}>;
 
   async start(): Promise<void> {
-    if ((await this.userRepo.count(EXECUTOR_SYSTEM)).count === 0) {
-      await this.userRepo.create(EXECUTOR_SYSTEM, {
+    if (
+      (await this.userRepo.count({ username: EXECUTOR_SYSTEM })).count === 0
+    ) {
+      await this.userRepo.create({
+        username: EXECUTOR_SYSTEM,
+        email: "",
+        password: "",
+      });
+    }
+    if ((await this.userRepo.count({ username: "admin" })).count === 0) {
+      await this.userRepo.create({
         username: "admin",
         email: "admin@ai-arena.com",
         password: "admin",
       });
     }
-    if ((await this.gameRepo.count(EXECUTOR_SYSTEM)).count === 0) {
+    if ((await this.gameRepo.count()).count === 0) {
       for (let i = 1; i <= 3; ++i) {
         const name = `Place Holder #${i}`;
-        await this.gameRepo.create(EXECUTOR_SYSTEM, {
+        await this.gameRepo.create({
           name,
           shortDescription: "Hold the place for some awsome games coming soon.",
           picture: DatabaseSeedObserver.PLACEHOLDER_PICTURE_BASE64,

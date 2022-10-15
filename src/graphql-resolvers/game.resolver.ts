@@ -8,7 +8,7 @@ import {
   ResolverData,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { Game, GameData, GameResponse, GamesResponse } from "../models/game";
+import { Game, GameInput, GameResponse, GamesResponse } from "../models/game";
 import { GameRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
@@ -37,7 +37,7 @@ export class GameResolver extends BaseResolver {
   }
 
   @mutation((returns) => GameResponse)
-  async createGame(@arg("game") game: GameData): Promise<typeof GameResponse> {
+  async createGame(@arg("game") game: GameInput): Promise<typeof GameResponse> {
     return handleAuthErrors(() =>
       this.gameRepository.create(this.executor, game),
     );

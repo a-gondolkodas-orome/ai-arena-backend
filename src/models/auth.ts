@@ -7,28 +7,15 @@ import {
 } from "@loopback/graphql";
 import { User } from "./user";
 import { createUnionType } from "type-graphql";
-import {
-  aiArenaExceptionCodec,
-  AuthenticationError,
-  AuthorizationError,
-  ErrorType,
-} from "../errors";
-import { decode } from "../utils";
+import { AuthenticationError, AuthorizationError } from "../errors";
+import { GqlValue } from "../utils";
 
 function resolveAuthErrorType(value: unknown) {
-  try {
-    const graphqlError = decode(aiArenaExceptionCodec, value);
-    switch (graphqlError.type) {
-      case ErrorType.AUTHENTICATION_ERROR:
-        return GraphqlAuthenticationError;
-      case ErrorType.AUTHORIZATION_ERROR:
-        return GraphqlAuthorizationError;
-      default:
-        return undefined;
-    }
-  } catch (error) {
-    return undefined;
-  }
+  if ((value as GqlValue).__typename === "GraphqlAuthenticationError")
+    return GraphqlAuthenticationError;
+  if ((value as GqlValue).__typename === "GraphqlAuthorizationError")
+    return GraphqlAuthorizationError;
+  return undefined;
 }
 
 @InterfaceType({
@@ -54,7 +41,10 @@ export async function handleAuthErrors<T>(getResponse: () => T | Promise<T>) {
       error instanceof AuthorizationError
     ) {
       return {
-        type: error.data.type,
+        __typename:
+          error instanceof AuthenticationError
+            ? "GraphqlAuthenticationError"
+            : "GraphqlAuthorizationError",
         message: error.data.message,
       };
     }
@@ -82,7 +72,7 @@ export function createAuthErrorUnionType<C extends ClassType[]>(
 }
 
 @inputType()
-export class RegistrationData {
+export class RegistrationInput {
   @field()
   username: string;
 

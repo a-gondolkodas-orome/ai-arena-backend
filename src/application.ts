@@ -13,12 +13,13 @@ import { AuthenticationComponent } from "@loopback/authentication";
 import {
   JWTAuthenticationComponent,
   UserServiceBindings,
+  TokenServiceBindings,
 } from "@loopback/authentication-jwt";
 import { MongoDataSource } from "./datasources";
-import { UserService } from "./services";
+import { BotService, JwtService, UserService } from "./services";
 import { UserRepository } from "./repositories";
 import { AiArenaBindings } from "./keys";
-import { AuthenticationProvider } from "./providers/authentication.provider";
+import { GraphqlAuthenticationProvider } from "./authentication/graphql-authentication.provider";
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
 
 export { ApplicationConfig };
@@ -34,13 +35,15 @@ export class AiArenaBackendApplication extends BootMixin(
     this.component(JWTAuthenticationComponent);
     this.dataSource(MongoDataSource, UserServiceBindings.DATASOURCE_NAME);
     this.bind(AiArenaBindings.USER_SERVICE).toClass(UserService);
+    this.bind(AiArenaBindings.BOT_SERVICE).toInjectable(BotService);
+    this.bind(AiArenaBindings.JWT_SERVICE).toInjectable(JwtService);
     this.bind(AiArenaBindings.AUTH_STRATEGY).toClass(JWTAuthenticationStrategy);
     this.bind(UserServiceBindings.USER_REPOSITORY).toClass(UserRepository);
-
+    this.bind(TokenServiceBindings.TOKEN_SERVICE).toInjectable(JwtService);
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware("middleware.express.GraphQL", server.expressApp);
     this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(
-      AuthenticationProvider,
+      GraphqlAuthenticationProvider,
     );
 
     this.sequence(AiArenaSequence);

@@ -6,7 +6,7 @@ import { createAuthErrorUnionType } from "./auth";
 @model({ settings: { strict: false } })
 export class User extends Entity {
   @field((type) => ID)
-  @property({ id: true })
+  @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
   @field()

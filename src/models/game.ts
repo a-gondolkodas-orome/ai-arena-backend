@@ -19,7 +19,7 @@ export class PlayerCount {
 @model()
 export class Game extends Entity {
   @field((type) => ID)
-  @property({ id: true })
+  @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
   @field()
@@ -46,7 +46,7 @@ export class Game extends Entity {
 }
 
 @inputType()
-export class GameData {
+export class GameInput {
   @field()
   name: string;
 
