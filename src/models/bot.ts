@@ -4,6 +4,7 @@ import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
 import { Game } from "./game";
 import { GqlValue } from "../utils";
+import { ProgramSource } from "./base";
 
 @objectType()
 @model()
@@ -35,7 +36,7 @@ export class Bot extends Entity {
   name: string;
 
   @property()
-  source: Buffer;
+  source: ProgramSource;
 
   @property()
   versionNumber: number;

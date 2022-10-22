@@ -1,7 +1,7 @@
 import * as t from "io-ts";
 import { ApolloError } from "apollo-server-errors";
 import { registerEnumType } from "type-graphql";
-import { enumCodec } from "./utils";
+import { enumCodec } from "./codec";
 
 export enum ErrorType {
   VALIDATION_ERROR = "VALIDATION_ERROR",

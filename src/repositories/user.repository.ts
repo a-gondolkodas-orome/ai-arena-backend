@@ -17,10 +17,7 @@ import { notNull } from "../utils";
 
 export class UserRepository {
   constructor(@inject("datasources.mongo") dataSource: MongoDataSource) {
-    this.repo = new DefaultCrudRepository<User, typeof User.prototype.id, {}>(
-      User,
-      dataSource,
-    );
+    this.repo = new DefaultCrudRepository(User, dataSource);
   }
 
   protected repo: DefaultCrudRepository<User, typeof User.prototype.id, {}>;
@@ -50,6 +47,11 @@ export class UserRepository {
     const user = await this.repo.findOne(filter, options);
     authorize(AccessLevel.OWNER, executor, user?.id);
     return user;
+  }
+
+  async findById(executor: Executor, userId: string) {
+    authorize(AccessLevel.OWNER, executor, userId);
+    return this.repo.findById(userId);
   }
 
   /** Don't use this. If you need the system user, get it from UserService. */

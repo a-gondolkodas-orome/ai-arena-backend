@@ -16,8 +16,8 @@ export async function authenticateRequest(
     throw error;
   }
   return !(result instanceof RedirectRoute) && result?.id
-    ? (await userRepository._systemAccess.findOne({
+    ? userRepository._systemAccess.findOne({
         where: { id: result.id },
-      })) ?? null
+      })
     : null;
 }

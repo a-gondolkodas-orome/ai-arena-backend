@@ -10,8 +10,8 @@ import {
   Jwt,
 } from "jsonwebtoken";
 import * as t from "io-ts";
-import { decode } from "../utils";
 import { AuthorizationError } from "../errors";
+import { decode } from "../codec";
 
 const signAsync = promisify<
   string | Buffer | object,

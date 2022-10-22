@@ -5,8 +5,6 @@ import { Bot, BotInput } from "../models/bot";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
 import { AccessLevel, authorize, Executor } from "../authorization";
-import { AiArenaBindings } from "../keys";
-import { UserService } from "../services";
 import { assertValue, convertObjectIdsToString } from "../utils";
 import { GameRepository } from "./game.repository";
 import { AuthorizationError, ValidationError } from "../errors";
@@ -15,13 +13,9 @@ import { User } from "../models/user";
 export class BotRepository {
   constructor(
     @inject("datasources.mongo") dataSource: MongoDataSource,
-    @inject(AiArenaBindings.USER_SERVICE) public userService: UserService,
     @repository("GameRepository") readonly gameRepository: GameRepository,
   ) {
-    this.repo = new DefaultCrudRepository<Bot, typeof Bot.prototype.id, {}>(
-      Bot,
-      dataSource,
-    );
+    this.repo = new DefaultCrudRepository(Bot, dataSource);
   }
 
   protected repo: DefaultCrudRepository<Bot, typeof Bot.prototype.id, {}>;
@@ -43,6 +37,12 @@ export class BotRepository {
         options,
       )
     ).map((bot) => convertObjectIdsToString(bot));
+  }
+
+  async findById(executor: Executor, botId: string) {
+    const bot = convertObjectIdsToString(await this.repo.findById(botId));
+    authorize(AccessLevel.OWNER, executor, bot.userId);
+    return bot;
   }
 
   async findOne(executor: Executor, filter?: Filter<Bot>, options?: Options) {

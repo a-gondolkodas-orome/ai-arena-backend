@@ -1,6 +1,7 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { Entity, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
+import { ProgramSource } from "./base";
 
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")
@@ -43,6 +44,12 @@ export class Game extends Entity {
   @field()
   @property()
   playerCount: PlayerCount;
+
+  @property.array(String)
+  maps: string[];
+
+  @property()
+  server: ProgramSource;
 }
 
 @inputType()

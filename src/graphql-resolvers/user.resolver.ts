@@ -8,7 +8,6 @@ import {
 import { repository } from "@loopback/repository";
 import { User, UserResponse, UsersResponse } from "../models/user";
 import { UserRepository } from "../repositories";
-import { notNull } from "../utils";
 import { AuthenticationError } from "../errors";
 import { handleAuthErrors } from "../models/auth";
 import { BaseResolver } from "./base.resolver";
@@ -33,11 +32,7 @@ export class UserResolver extends BaseResolver {
   async profile(): Promise<typeof UserResponse> {
     return handleAuthErrors(async () => {
       if (this.executor === null) throw new AuthenticationError({});
-      return notNull(
-        await this.userRepository.findOne(this.executor, {
-          where: { id: this.executor.id },
-        }),
-      );
+      return this.userRepository.findById(this.executor, this.executor.id);
     });
   }
 }

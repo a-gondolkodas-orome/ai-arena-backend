@@ -16,7 +16,7 @@ import {
   TokenServiceBindings,
 } from "@loopback/authentication-jwt";
 import { MongoDataSource } from "./datasources";
-import { BotService, JwtService, UserService } from "./services";
+import { BotService, JwtService, MatchService, UserService } from "./services";
 import { UserRepository } from "./repositories";
 import { AiArenaBindings } from "./keys";
 import { GraphqlAuthenticationProvider } from "./authentication/graphql-authentication.provider";
@@ -36,6 +36,7 @@ export class AiArenaBackendApplication extends BootMixin(
     this.dataSource(MongoDataSource, UserServiceBindings.DATASOURCE_NAME);
     this.bind(AiArenaBindings.USER_SERVICE).toClass(UserService);
     this.bind(AiArenaBindings.BOT_SERVICE).toInjectable(BotService);
+    this.bind(AiArenaBindings.MATCH_SERVICE).toInjectable(MatchService);
     this.bind(AiArenaBindings.JWT_SERVICE).toInjectable(JwtService);
     this.bind(AiArenaBindings.AUTH_STRATEGY).toClass(JWTAuthenticationStrategy);
     this.bind(UserServiceBindings.USER_REPOSITORY).toClass(UserRepository);

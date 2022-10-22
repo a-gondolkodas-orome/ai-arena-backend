@@ -21,6 +21,7 @@ const multerInterceptor = toInterceptor(
 
 export class BotController {
   static readonly ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE = "/bot-source";
+
   constructor(
     @inject(AiArenaBindings.BOT_SERVICE) protected botService: BotService,
     @repository("BotRepository") protected botRepository: BotRepository,
@@ -54,7 +55,10 @@ export class BotController {
     }
     await this.botRepository.update(request.executor, {
       id: tokenData.bot.id,
-      source: request.file.buffer,
+      source: {
+        fileName: request.file.originalname,
+        file: request.file.buffer,
+      },
     });
     this.response.status(HttpStatusCode.HTTP_201_CREATED);
   }

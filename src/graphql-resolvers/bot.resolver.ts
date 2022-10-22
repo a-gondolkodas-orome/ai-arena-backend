@@ -15,7 +15,6 @@ import { AddBotResponse, Bot, BotInput, BotsResponse } from "../models/bot";
 import { BotRepository, GameRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
-import { notNull } from "../utils";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { AiArenaBindings } from "../keys";
@@ -81,19 +80,11 @@ export class BotResolver
 
   @fieldResolver()
   async user(@root() bot: Bot) {
-    return notNull(
-      await this.userRepository.findOne(this.executor, {
-        where: { id: bot.userId },
-      }),
-    );
+    return this.userRepository.findById(this.executor, bot.userId);
   }
 
   @fieldResolver()
   async game(@root() bot: Bot) {
-    return notNull(
-      await this.gameRepository.findOne(this.executor, {
-        where: { id: bot.gameId },
-      }),
-    );
+    return this.gameRepository.findById(this.executor, bot.gameId);
   }
 }

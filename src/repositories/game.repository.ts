@@ -8,10 +8,7 @@ import { AccessLevel, Executor, authorize } from "../authorization";
 
 export class GameRepository {
   constructor(@inject("datasources.mongo") dataSource: MongoDataSource) {
-    this.repo = new DefaultCrudRepository<Game, typeof Game.prototype.id, {}>(
-      Game,
-      dataSource,
-    );
+    this.repo = new DefaultCrudRepository(Game, dataSource);
   }
   protected repo: DefaultCrudRepository<Game, typeof Game.prototype.id, {}>;
 
@@ -37,6 +34,11 @@ export class GameRepository {
   async findOne(executor: Executor, filter?: Filter<Game>, options?: Options) {
     authorize(AccessLevel.USER, executor);
     return this.repo.findOne(filter, options);
+  }
+
+  async findById(executor: Executor, gameId: string) {
+    authorize(AccessLevel.USER, executor);
+    return this.repo.findById(gameId);
   }
 
   async create(executor: Executor, game: GameInput, options?: Options) {
