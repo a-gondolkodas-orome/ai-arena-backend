@@ -12,9 +12,7 @@ export type Credentials = {
 };
 
 export class UserService implements AuthUserService<User, Credentials> {
-  constructor(
-    @repository(UserRepository) public userRepository: UserRepository,
-  ) {}
+  constructor(@repository(UserRepository) public userRepository: UserRepository) {}
 
   async verifyCredentials(credentials: Credentials): Promise<User> {
     if (credentials.email.length === 0) {

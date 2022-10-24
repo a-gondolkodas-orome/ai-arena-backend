@@ -13,20 +13,12 @@ export class Bot extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  @belongsTo(
-    () => User,
-    {},
-    { type: "string", mongodb: { dataType: "ObjectId" } },
-  )
+  @belongsTo(() => User, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   userId: string;
   @field()
   user: User;
 
-  @belongsTo(
-    () => Game,
-    {},
-    { type: "string", mongodb: { dataType: "ObjectId" } },
-  )
+  @belongsTo(() => Game, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   gameId: string;
   @field()
   game: Game;
@@ -91,9 +83,6 @@ export class Bots {
   bots: Bot[];
 }
 
-export const BotsResponse = createAuthErrorUnionType(
-  "BotsResponse",
-  [Bots],
-  (value: unknown) =>
-    (value as GqlValue).__typename === "Bots" ? Bots : undefined,
+export const BotsResponse = createAuthErrorUnionType("BotsResponse", [Bots], (value: unknown) =>
+  (value as GqlValue).__typename === "Bots" ? Bots : undefined,
 );

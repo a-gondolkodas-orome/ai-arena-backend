@@ -50,9 +50,7 @@ export class AuthResolver {
   }
 
   @query((returns) => LoginResponse)
-  async login(
-    @arg("credentials") credentials: Credentials,
-  ): Promise<typeof LoginResponse> {
+  async login(@arg("credentials") credentials: Credentials): Promise<typeof LoginResponse> {
     return handleAuthErrors(async () => {
       const user = await this.userService.verifyCredentials(credentials);
       const userProfile = this.userService.convertToUserProfile(user);

@@ -56,34 +56,24 @@ export class MatchService {
     await fsp.writeFile(mapPath, game.maps[0]);
     const botsCommandLineParam = botConfigs
       .map(
-        (botConfig) =>
-          '"' +
-          botConfig.runCommand.replace("%program", botConfig.programPath) +
-          '"',
+        (botConfig) => '"' + botConfig.runCommand.replace("%program", botConfig.programPath) + '"',
       )
       .join(" ");
-    const serverRunCommand = serverConfig.runCommand.replaceAll(
-      /%program|%map|%bots/g,
-      (token) => {
-        if (token === "%program") return serverConfig.programPath;
-        if (token === "%map") return "map.txt";
-        if (token === "%bots") return botsCommandLineParam;
-        throw new ValidationError({
-          fieldErrors: {
-            runCommand: [`unknown replacement pattern: ${token}`],
-          },
-        });
-      },
-    );
+    const serverRunCommand = serverConfig.runCommand.replaceAll(/%program|%map|%bots/g, (token) => {
+      if (token === "%program") return serverConfig.programPath;
+      if (token === "%map") return "map.txt";
+      if (token === "%bots") return botsCommandLineParam;
+      throw new ValidationError({
+        fieldErrors: {
+          runCommand: [`unknown replacement pattern: ${token}`],
+        },
+      });
+    });
     await exec(serverRunCommand, { cwd: matchPath });
   }
 
   async prepareGameServer(executor: Executor, game: Game) {
-    const serverBuildPath = path.join(
-      MatchService.getGamePath(game.id),
-      "server",
-      "build",
-    );
+    const serverBuildPath = path.join(MatchService.getGamePath(game.id), "server", "build");
     return this.prepareProgram(serverBuildPath, game.server, "server");
   }
 
@@ -93,16 +83,8 @@ export class MatchService {
     return this.prepareProgram(botBuildPath, bot.source, "bot");
   }
 
-  async prepareProgram(
-    buildPath: string,
-    programSource: ProgramSource,
-    targetProgramName: string,
-  ) {
-    const configFilePath = path.join(
-      buildPath,
-      "..",
-      MatchService.AI_ARENA_CONFIG_FILE_NAME,
-    );
+  async prepareProgram(buildPath: string, programSource: ProgramSource, targetProgramName: string) {
+    const configFilePath = path.join(buildPath, "..", MatchService.AI_ARENA_CONFIG_FILE_NAME);
     const targetProgramPath = path.join(buildPath, "..", targetProgramName);
     const parseConfig = async () =>
       decode(
@@ -139,10 +121,7 @@ export class MatchService {
       }
       config = await parseConfig();
       await exec(config.build, { cwd: buildPath });
-      await fsp.rename(
-        path.join(buildPath, config.programPath),
-        targetProgramPath,
-      );
+      await fsp.rename(path.join(buildPath, config.programPath), targetProgramPath);
     }
     return { runCommand: config.run, programPath: targetProgramPath };
   }

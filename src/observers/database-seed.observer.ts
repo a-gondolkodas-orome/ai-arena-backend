@@ -18,9 +18,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
   protected gameRepo: DefaultCrudRepository<Game, typeof Game.prototype.id, {}>;
 
   async start(): Promise<void> {
-    if (
-      (await this.userRepo.count({ username: EXECUTOR_SYSTEM })).count === 0
-    ) {
+    if ((await this.userRepo.count({ username: EXECUTOR_SYSTEM })).count === 0) {
       await this.userRepo.create({
         username: EXECUTOR_SYSTEM,
         email: "",

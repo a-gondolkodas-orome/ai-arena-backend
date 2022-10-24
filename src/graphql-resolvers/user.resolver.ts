@@ -1,10 +1,5 @@
 import { inject } from "@loopback/core";
-import {
-  GraphQLBindings,
-  query,
-  resolver,
-  ResolverData,
-} from "@loopback/graphql";
+import { GraphQLBindings, query, resolver, ResolverData } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { User, UserResponse, UsersResponse } from "../models/user";
 import { UserRepository } from "../repositories";

@@ -46,25 +46,13 @@ export const authenticationErrorCodec = t.partial(
   "authenticationErrorCodec",
 );
 
-export const authorizationErrorCodec = t.partial(
-  { message: t.string },
-  "authorizationErrorCodec",
-);
+export const authorizationErrorCodec = t.partial({ message: t.string }, "authorizationErrorCodec");
 
 export const aiArenaExceptionCodec = t.intersection([
   t.union([
-    t.intersection([
-      t.type({ type: t.literal(ErrorType.VALIDATION_ERROR) }),
-      validationErrorCodec,
-    ]),
-    t.intersection([
-      t.type({ type: t.literal(ErrorType.ASSERT_EXCEPTION) }),
-      assertExceptionCodec,
-    ]),
-    t.intersection([
-      t.type({ type: t.literal(ErrorType.USER_EXCEPTION) }),
-      userExceptionCodec,
-    ]),
+    t.intersection([t.type({ type: t.literal(ErrorType.VALIDATION_ERROR) }), validationErrorCodec]),
+    t.intersection([t.type({ type: t.literal(ErrorType.ASSERT_EXCEPTION) }), assertExceptionCodec]),
+    t.intersection([t.type({ type: t.literal(ErrorType.USER_EXCEPTION) }), userExceptionCodec]),
     t.intersection([
       t.type({ type: t.literal(ErrorType.AUTHENTICATION_ERROR) }),
       authenticationErrorCodec,

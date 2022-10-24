@@ -4,12 +4,7 @@ import { MongoDataSource } from "../datasources";
 import { User } from "../models/user";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
-import {
-  AccessLevel,
-  Executor,
-  authorize,
-  EXECUTOR_SYSTEM,
-} from "../authorization";
+import { AccessLevel, Executor, authorize, EXECUTOR_SYSTEM } from "../authorization";
 import { genSalt, hash } from "bcryptjs";
 import { RegistrationInput } from "../models/auth";
 import { ValidationError } from "../errors";
@@ -56,16 +51,13 @@ export class UserRepository {
 
   /** Don't use this. If you need the system user, get it from UserService. */
   async _getSystemUser() {
-    return notNull(
-      await this.repo.findOne({ where: { username: EXECUTOR_SYSTEM } }),
-    );
+    return notNull(await this.repo.findOne({ where: { username: EXECUTOR_SYSTEM } }));
   }
 
   // TODO use some validation library?
   protected async validateCreate(user: RegistrationInput) {
     const usernameErrors = [];
-    if (user.username.length === 0)
-      usernameErrors.push("Username must not be empty");
+    if (user.username.length === 0) usernameErrors.push("Username must not be empty");
     const usernameCollision = await this.repo.findOne({
       where: { username: user.username },
     });
@@ -77,8 +69,7 @@ export class UserRepository {
     });
     if (emailCollision) emailErrors.push("Email already in use");
     const passwordErrors = [];
-    if (user.password.length === 0)
-      passwordErrors.push("Password must not be empty");
+    if (user.password.length === 0) passwordErrors.push("Password must not be empty");
     if (usernameErrors.length || emailErrors.length || passwordErrors.length) {
       throw new ValidationError({
         fieldErrors: {

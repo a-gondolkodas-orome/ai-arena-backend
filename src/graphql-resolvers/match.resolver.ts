@@ -12,12 +12,7 @@ import {
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { Match, MatchInput, StartMatchResponse } from "../models/match";
-import {
-  BotRepository,
-  GameRepository,
-  MatchRepository,
-  UserRepository,
-} from "../repositories";
+import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
@@ -27,10 +22,7 @@ import { AiArenaBindings } from "../keys";
 import { MatchService } from "../services";
 
 @resolver((of) => Match)
-export class MatchResolver
-  extends BaseResolver
-  implements ResolverInterface<Match>
-{
+export class MatchResolver extends BaseResolver implements ResolverInterface<Match> {
   constructor(
     @repository("MatchRepository") protected matchRepository: MatchRepository,
     @repository("UserRepository") protected userRepository: UserRepository,
@@ -43,9 +35,7 @@ export class MatchResolver
   }
 
   @query((returns) => MatchesResponse)
-  async getMatches(
-    @arg("gameId") gameId: string,
-  ): Promise<typeof MatchesResponse> {
+  async getMatches(@arg("gameId") gameId: string): Promise<typeof MatchesResponse> {
     return handleAuthErrors(async () => ({
       __typename: "Matches",
       matches: await this.matchRepository.getUserMatches(this.executor, {
@@ -58,10 +48,7 @@ export class MatchResolver
   async startMatch(@arg("matchInput") matchInput: MatchInput) {
     return handleAuthErrors(async () => {
       try {
-        const match = await this.matchRepository.create(
-          this.executor,
-          matchInput,
-        );
+        const match = await this.matchRepository.create(this.executor, matchInput);
         await this.matchService.startMatch(this.executor, match);
         return { __typename: "Match", ...match };
       } catch (error) {
@@ -69,8 +56,7 @@ export class MatchResolver
           return {
             __typename: "StartMatchError",
             message: error.data.message,
-            fieldErrors: (error.data as t.TypeOf<typeof validationErrorCodec>)
-              .fieldErrors,
+            fieldErrors: (error.data as t.TypeOf<typeof validationErrorCodec>).fieldErrors,
           };
         }
         throw error;

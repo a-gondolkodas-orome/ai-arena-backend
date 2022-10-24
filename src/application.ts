@@ -1,9 +1,6 @@
 import { BootMixin } from "@loopback/boot";
 import { ApplicationConfig } from "@loopback/core";
-import {
-  RestExplorerBindings,
-  RestExplorerComponent,
-} from "@loopback/rest-explorer";
+import { RestExplorerBindings, RestExplorerComponent } from "@loopback/rest-explorer";
 import { RestApplication } from "@loopback/rest";
 import path from "path";
 import { AiArenaSequence } from "./sequence";
@@ -24,9 +21,7 @@ import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/ser
 
 export { ApplicationConfig };
 
-export class AiArenaBackendApplication extends BootMixin(
-  RepositoryMixin(RestApplication),
-) {
+export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApplication)) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
@@ -43,9 +38,7 @@ export class AiArenaBackendApplication extends BootMixin(
     this.bind(TokenServiceBindings.TOKEN_SERVICE).toInjectable(JwtService);
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware("middleware.express.GraphQL", server.expressApp);
-    this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(
-      GraphqlAuthenticationProvider,
-    );
+    this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlAuthenticationProvider);
 
     this.sequence(AiArenaSequence);
     this.static("/", path.join(__dirname, "../public"));

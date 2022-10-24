@@ -16,8 +16,7 @@ export function enumCodec<T extends object>(enumType: T, enumName: string) {
   return new t.Type<T[keyof T]>(
     enumName,
     isEnumValue,
-    (input, context) =>
-      isEnumValue(input) ? t.success(input) : t.failure(input, context),
+    (input, context) => (isEnumValue(input) ? t.success(input) : t.failure(input, context)),
     t.identity,
   );
 }

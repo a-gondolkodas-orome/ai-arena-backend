@@ -20,20 +20,12 @@ export class Match extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  @belongsTo(
-    () => User,
-    {},
-    { type: "string", mongodb: { dataType: "ObjectId" } },
-  )
+  @belongsTo(() => User, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   userId: string;
   @field()
   user: User;
 
-  @belongsTo(
-    () => Game,
-    {},
-    { type: "string", mongodb: { dataType: "ObjectId" } },
-  )
+  @belongsTo(() => Game, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   gameId: string;
   @field()
   game: Game;
@@ -97,6 +89,5 @@ export class Matches {
 export const MatchesResponse = createAuthErrorUnionType(
   "MatchesResponse",
   [Matches],
-  (value: unknown) =>
-    (value as GqlValue).__typename === "Matches" ? Matches : undefined,
+  (value: unknown) => ((value as GqlValue).__typename === "Matches" ? Matches : undefined),
 );

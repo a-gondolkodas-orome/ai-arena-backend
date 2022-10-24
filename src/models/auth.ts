@@ -1,10 +1,4 @@
-import {
-  ClassType,
-  field,
-  inputType,
-  InterfaceType,
-  objectType,
-} from "@loopback/graphql";
+import { ClassType, field, inputType, InterfaceType, objectType } from "@loopback/graphql";
 import { User } from "./user";
 import { createUnionType } from "type-graphql";
 import { AuthenticationError, AuthorizationError } from "../errors";
@@ -36,10 +30,7 @@ export async function handleAuthErrors<T>(getResponse: () => T | Promise<T>) {
   try {
     return await getResponse();
   } catch (error) {
-    if (
-      error instanceof AuthenticationError ||
-      error instanceof AuthorizationError
-    ) {
+    if (error instanceof AuthenticationError || error instanceof AuthorizationError) {
       return {
         __typename:
           error instanceof AuthenticationError
@@ -59,12 +50,7 @@ export function createAuthErrorUnionType<C extends ClassType[]>(
 ) {
   return createUnionType({
     name: name,
-    types: () =>
-      [
-        ...types,
-        GraphqlAuthenticationError,
-        GraphqlAuthorizationError,
-      ] as const,
+    types: () => [...types, GraphqlAuthenticationError, GraphqlAuthorizationError] as const,
     resolveType: (value: unknown) => {
       return resolveType(value) ?? resolveAuthErrorType(value);
     },
@@ -116,8 +102,7 @@ export const RegistrationResponse = createAuthErrorUnionType(
   (value: unknown) => {
     if (typeof value === "object" && value) {
       if ("token" in value && "user" in value) return RegistrationSuccess;
-      if ("fieldErrors" in value || "nonFieldErrors" in value)
-        return RegistrationError;
+      if ("fieldErrors" in value || "nonFieldErrors" in value) return RegistrationError;
     }
     return undefined;
   },
@@ -142,9 +127,7 @@ export const LoginResponse = createAuthErrorUnionType(
   "LoginResponse",
   [LoginSuccess],
   (value: unknown) => {
-    return typeof value === "object" && value && "token" in value
-      ? LoginSuccess
-      : undefined;
+    return typeof value === "object" && value && "token" in value ? LoginSuccess : undefined;
   },
 );
 

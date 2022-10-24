@@ -1,12 +1,5 @@
 import { inject } from "@loopback/core";
-import {
-  arg,
-  GraphQLBindings,
-  mutation,
-  query,
-  resolver,
-  ResolverData,
-} from "@loopback/graphql";
+import { arg, GraphQLBindings, mutation, query, resolver, ResolverData } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { Game, GameInput, GameResponse, GamesResponse } from "../models/game";
 import { GameRepository } from "../repositories";
@@ -31,15 +24,11 @@ export class GameResolver extends BaseResolver {
 
   @query((returns) => GameResponse, { nullable: true })
   async findGame(@arg("id") id: string): Promise<typeof GameResponse | null> {
-    return handleAuthErrors(() =>
-      this.gameRepository.findOne(this.executor, { where: { id } }),
-    );
+    return handleAuthErrors(() => this.gameRepository.findOne(this.executor, { where: { id } }));
   }
 
   @mutation((returns) => GameResponse)
   async createGame(@arg("game") game: GameInput): Promise<typeof GameResponse> {
-    return handleAuthErrors(() =>
-      this.gameRepository.create(this.executor, game),
-    );
+    return handleAuthErrors(() => this.gameRepository.create(this.executor, game));
   }
 }

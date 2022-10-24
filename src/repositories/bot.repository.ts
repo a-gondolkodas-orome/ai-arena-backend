@@ -24,18 +24,11 @@ export class BotRepository {
     return this.repo;
   }
 
-  async getUserBots(
-    executor: Executor,
-    filter?: Filter<Bot>,
-    options?: Options,
-  ) {
+  async getUserBots(executor: Executor, filter?: Filter<Bot>, options?: Options) {
     authorize(AccessLevel.USER, executor);
     assertValue(executor);
     return (
-      await this.repo.find(
-        { ...filter, where: { ...filter?.where, userId: executor.id } },
-        options,
-      )
+      await this.repo.find({ ...filter, where: { ...filter?.where, userId: executor.id } }, options)
     ).map((bot) => convertObjectIdsToString(bot));
   }
 
@@ -69,8 +62,7 @@ export class BotRepository {
 
   async update(
     executor: Executor,
-    botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber">> &
-      Pick<Bot, "id">,
+    botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber">> & Pick<Bot, "id">,
     options?: Options,
   ) {
     let bot;

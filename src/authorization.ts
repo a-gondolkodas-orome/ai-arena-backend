@@ -38,11 +38,7 @@ export function authorize(
     executor instanceof User && executor.username === "admin", // TODO handle roles
     executor instanceof User && executor.username === EXECUTOR_SYSTEM, // and here as well
   ].lastIndexOf(true);
-  if (requiredAccessLevel !== AccessLevel.NONE && !executor)
-    throw new AuthenticationError({});
-  if (
-    executorAccessLevel <
-    Object.values(AccessLevel).indexOf(requiredAccessLevel)
-  )
+  if (requiredAccessLevel !== AccessLevel.NONE && !executor) throw new AuthenticationError({});
+  if (executorAccessLevel < Object.values(AccessLevel).indexOf(requiredAccessLevel))
     throw new AuthorizationError({});
 }

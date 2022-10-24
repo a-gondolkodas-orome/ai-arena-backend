@@ -10,17 +10,11 @@ export function notNull<T>(value: T): Exclude<T, null | undefined> {
   return value as Exclude<T, null | undefined>;
 }
 
-export function assertValue<T>(
-  value: T,
-): asserts value is Exclude<T, null | undefined> {
+export function assertValue<T>(value: T): asserts value is Exclude<T, null | undefined> {
   notNull(value);
 }
 
-export function catchWithInfo(
-  promise: Promise<unknown>,
-  filename: string,
-  location: string,
-) {
+export function catchWithInfo(promise: Promise<unknown>, filename: string, location: string) {
   promise.catch((error) => {
     throw new AssertException({
       message: error.message(),
@@ -37,9 +31,7 @@ export function convertObjectIdsToString<T extends object>(entity: T) {
   for (const key of Object.keys(object)) {
     const value = object[key];
     if (Array.isArray(value) && value.length && isObjectId(value[0]))
-      object[key] = value.map((item: unknown) =>
-        isObjectId(item) ? item.toString() : item,
-      );
+      object[key] = value.map((item: unknown) => (isObjectId(item) ? item.toString() : item));
     else if (value && typeof value === "object" && isObjectId(value))
       object[key] = value.toString();
   }

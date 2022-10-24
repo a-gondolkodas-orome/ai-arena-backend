@@ -26,18 +26,11 @@ export class MatchRepository {
     return this.repo;
   }
 
-  async getUserMatches(
-    executor: Executor,
-    filter?: Filter<Match>,
-    options?: Options,
-  ) {
+  async getUserMatches(executor: Executor, filter?: Filter<Match>, options?: Options) {
     authorize(AccessLevel.USER, executor);
     assertValue(executor);
     return (
-      await this.repo.find(
-        { ...filter, where: { ...filter?.where, userId: executor.id } },
-        options,
-      )
+      await this.repo.find({ ...filter, where: { ...filter?.where, userId: executor.id } }, options)
     ).map((match) => convertObjectIdsToString(match));
   }
 

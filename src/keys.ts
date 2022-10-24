@@ -8,6 +8,5 @@ export namespace AiArenaBindings {
   export const MATCH_SERVICE = BindingKey.create<MatchService>("match.service");
   export const JWT_SERVICE = BindingKey.create<JwtService>("jwt.service");
 
-  export const AUTH_STRATEGY =
-    BindingKey.create<AuthenticationStrategy>("auth.strategy");
+  export const AUTH_STRATEGY = BindingKey.create<AuthenticationStrategy>("auth.strategy");
 }

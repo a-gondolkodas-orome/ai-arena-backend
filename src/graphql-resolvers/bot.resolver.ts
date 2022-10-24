@@ -21,10 +21,7 @@ import { AiArenaBindings } from "../keys";
 import { BotService } from "../services";
 
 @resolver((of) => Bot)
-export class BotResolver
-  extends BaseResolver
-  implements ResolverInterface<Bot>
-{
+export class BotResolver extends BaseResolver implements ResolverInterface<Bot> {
   constructor(
     @repository("BotRepository") protected botRepository: BotRepository,
     @repository("UserRepository") protected userRepository: UserRepository,
@@ -46,9 +43,7 @@ export class BotResolver
   }
 
   @mutation((returns) => AddBotResponse)
-  async createBot(
-    @arg("bot") botInput: BotInput,
-  ): Promise<typeof AddBotResponse> {
+  async createBot(@arg("bot") botInput: BotInput): Promise<typeof AddBotResponse> {
     return handleAuthErrors(async () => {
       try {
         const bot = await this.botRepository.create(this.executor, botInput);
@@ -62,8 +57,7 @@ export class BotResolver
           return {
             __typename: "AddBotError",
             message: error.data.message,
-            fieldErrors: (error.data as t.TypeOf<typeof validationErrorCodec>)
-              .fieldErrors,
+            fieldErrors: (error.data as t.TypeOf<typeof validationErrorCodec>).fieldErrors,
           };
         }
         throw error;

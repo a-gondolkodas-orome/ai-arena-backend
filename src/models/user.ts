@@ -27,22 +27,14 @@ export class Users {
   users: User[];
 }
 
-export const UserResponse = createAuthErrorUnionType(
-  "UserResponse",
-  [User],
-  (value: unknown) => {
-    return typeof value === "object" && value && "username" in value
-      ? User
-      : undefined;
-  },
-);
+export const UserResponse = createAuthErrorUnionType("UserResponse", [User], (value: unknown) => {
+  return typeof value === "object" && value && "username" in value ? User : undefined;
+});
 
 export const UsersResponse = createAuthErrorUnionType(
   "UsersResponse",
   [Users],
   (value: unknown) => {
-    return typeof value === "object" && value && "users" in value
-      ? Users
-      : undefined;
+    return typeof value === "object" && value && "users" in value ? Users : undefined;
   },
 );

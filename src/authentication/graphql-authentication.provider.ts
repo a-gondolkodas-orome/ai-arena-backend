@@ -6,9 +6,7 @@ import { repository } from "@loopback/repository";
 import { UserRepository } from "../repositories";
 import { authenticateRequest } from "./authentication";
 
-export class GraphqlAuthenticationProvider
-  implements Provider<ContextFunction<ExpressContext>>
-{
+export class GraphqlAuthenticationProvider implements Provider<ContextFunction<ExpressContext>> {
   constructor(
     @inject(AiArenaBindings.AUTH_STRATEGY)
     protected authStrategy: AuthenticationStrategy,
@@ -19,11 +17,7 @@ export class GraphqlAuthenticationProvider
     return async (context: ExpressContext) => {
       return {
         ...context,
-        executor: await authenticateRequest(
-          this.authStrategy,
-          this.userRepository,
-          context.req,
-        ),
+        executor: await authenticateRequest(this.authStrategy, this.userRepository, context.req),
       };
     };
   }

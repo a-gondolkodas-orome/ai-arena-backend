@@ -72,13 +72,8 @@ export class GameInput {
   playerCount: PlayerCount;
 }
 
-export const GameResponse = createAuthErrorUnionType(
-  "GameResponse",
-  [Game],
-  (value: unknown) =>
-    typeof value === "object" && value && "shortDescription" in value
-      ? Game
-      : undefined,
+export const GameResponse = createAuthErrorUnionType("GameResponse", [Game], (value: unknown) =>
+  typeof value === "object" && value && "shortDescription" in value ? Game : undefined,
 );
 
 @objectType()
@@ -87,9 +82,6 @@ export class Games {
   games: Game[];
 }
 
-export const GamesResponse = createAuthErrorUnionType(
-  "GamesResponse",
-  [Games],
-  (value: unknown) =>
-    typeof value === "object" && value && "games" in value ? Games : undefined,
+export const GamesResponse = createAuthErrorUnionType("GamesResponse", [Games], (value: unknown) =>
+  typeof value === "object" && value && "games" in value ? Games : undefined,
 );
