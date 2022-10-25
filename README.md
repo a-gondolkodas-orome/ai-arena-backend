@@ -17,7 +17,10 @@ Install the latest (Long Term Support) version of Node.js
 
 Install yarn (package manager): https://yarnpkg.com/getting-started/install
 
-Clone the repository: `git clone https://github.com/leanil/ai-arena-backend.git`
+Clone the repository (and the submodules):
+```sh
+git clone --recurse-submodules https://github.com/leanil/ai-arena-backend.git
+```
 
 Install the dependencies: run `yarn` in the repo directory (`ai-arena-backend`)
 

@@ -1442,6 +1442,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/md5@npm:^2.3.2":
+  version: 2.3.2
+  resolution: "@types/md5@npm:2.3.2"
+  checksum: ce59779c5aa9bcafe6e089f7a0be2f25fb4661d437809dd7e895e13e9369855aeee8521a0a954bb38468cd8ed2d7c84d5dbb3ba37544f5a11c8a199e5a8561b6
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:*":
   version: 3.0.1
   resolution: "@types/mime@npm:3.0.1"
@@ -1971,12 +1978,14 @@ __metadata:
     "@loopback/testlab": ^5.0.3
     "@types/bcryptjs": ^2.4.2
     "@types/jsonwebtoken": ^8.5.9
+    "@types/md5": ^2.3.2
     "@types/mocha": ^9.1.1
     "@types/multer": ^1.4.7
     "@types/node": ^18.7.18
     "@typescript-eslint/eslint-plugin": ^5.38.0
     "@typescript-eslint/parser": ^5.38.0
     apollo-server-errors: ^3.3.1
+    base64-js: ^1.5.1
     bcryptjs: ^2.4.3
     eslint: ^8.23.1
     eslint-config-prettier: ^8.5.0
@@ -1988,6 +1997,7 @@ __metadata:
     io-ts: ^2.2.18
     jsonwebtoken: ^8.5.1
     loopback-connector-mongodb: ^6.2.0
+    md5: ^2.3.0
     mongodb: ^4.10.0
     multer: ^1.4.5-lts.1
     prettier: ^2.7.1
@@ -2519,7 +2529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base64-js@npm:^1.3.1":
+"base64-js@npm:^1.3.1, base64-js@npm:^1.5.1":
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 669632eb3745404c2f822a18fc3a0122d2f9a7a13f7fb8b5823ee19d1d2ff9ee5b52c53367176ea4ad093c332fd5ab4bd0ebae5a8e27917a4105a4cfc86b1005

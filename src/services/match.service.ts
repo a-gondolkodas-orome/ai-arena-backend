@@ -6,7 +6,7 @@ import { Match } from "../models/match";
 import path from "path";
 import fs from "fs";
 import fsp from "fs/promises";
-import { decode } from "../codec";
+import { decodeJson } from "../codec";
 import { promisify } from "util";
 import child_process from "child_process";
 import * as t from "io-ts";
@@ -87,10 +87,7 @@ export class MatchService {
     const configFilePath = path.join(buildPath, "..", MatchService.AI_ARENA_CONFIG_FILE_NAME);
     const targetProgramPath = path.join(buildPath, "..", targetProgramName);
     const parseConfig = async () =>
-      decode(
-        MatchService.aiArenaConfigCodec,
-        JSON.parse((await fsp.readFile(configFilePath)).toString()),
-      );
+      decodeJson(MatchService.aiArenaConfigCodec, (await fsp.readFile(configFilePath)).toString());
     let config;
     if (fs.existsSync(configFilePath) && fs.existsSync(targetProgramPath)) {
       config = await parseConfig();

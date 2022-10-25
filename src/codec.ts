@@ -9,6 +9,10 @@ export function decode<A, O, I>(codec: t.Type<A, O, I>, input: I): A {
   return decodeResult.right;
 }
 
+export function decodeJson<A, O, I>(codec: t.Type<A, O, I>, input: string): A {
+  return decode(codec, JSON.parse(input));
+}
+
 export function enumCodec<T extends object>(enumType: T, enumName: string) {
   const isEnumValue = (input: unknown): input is T[keyof T] =>
     Object.values(enumType).includes(input);

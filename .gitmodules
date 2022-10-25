@@ -1,0 +1,3 @@
+[submodule "games/bomberman"]
+	path = games/bomberman
+	url = https://github.com/leanil/ai-arena-bomberman.git

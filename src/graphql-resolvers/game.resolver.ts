@@ -1,13 +1,24 @@
 import { inject } from "@loopback/core";
-import { arg, GraphQLBindings, mutation, query, resolver, ResolverData } from "@loopback/graphql";
+import {
+  arg,
+  fieldResolver,
+  GraphQLBindings,
+  mutation,
+  query,
+  resolver,
+  ResolverData,
+  ResolverInterface,
+  root,
+} from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { Game, GameInput, GameResponse, GamesResponse } from "../models/game";
 import { GameRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
+import { fromByteArray } from "base64-js";
 
 @resolver((of) => Game)
-export class GameResolver extends BaseResolver {
+export class GameResolver extends BaseResolver implements ResolverInterface<Game> {
   constructor(
     @repository("GameRepository") readonly gameRepository: GameRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
@@ -30,5 +41,10 @@ export class GameResolver extends BaseResolver {
   @mutation((returns) => GameResponse)
   async createGame(@arg("game") game: GameInput): Promise<typeof GameResponse> {
     return handleAuthErrors(() => this.gameRepository.create(this.executor, game));
+  }
+
+  @fieldResolver()
+  async picture(@root() game: Game) {
+    return fromByteArray(game.pictureBuffer);
   }
 }

@@ -33,8 +33,9 @@ export class Game extends Entity {
 
   /** base64 representation of a "profile" picture for the game */
   @field()
-  @property()
   picture: string;
+  @property()
+  pictureBuffer: Buffer;
 
   /** The complete definition of the game, including the communication protocol. */
   @field()
