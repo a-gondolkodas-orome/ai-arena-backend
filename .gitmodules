@@ -1,3 +1,6 @@
 [submodule "games/bomberman"]
 	path = games/bomberman
 	url = https://github.com/leanil/ai-arena-bomberman.git
+[submodule "games/planet-war"]
+	path = games/planet-war
+	url = https://github.com/Kristofy/botWrapper.git
