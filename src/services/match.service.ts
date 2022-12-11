@@ -55,12 +55,10 @@ export class MatchService {
     const mapPath = path.join(matchPath, "map.txt");
     await fsp.writeFile(mapPath, game.maps[0]);
     const botsCommandLineParam = botConfigs
-      .map(
-        (botConfig) => '"' + botConfig.runCommand.replace("%program", botConfig.programPath) + '"',
-      )
+      .map((botConfig) => `"${botConfig.runCommand.replace("%program", botConfig.programPath)}"`)
       .join(" ");
     const serverRunCommand = serverConfig.runCommand.replaceAll(/%program|%map|%bots/g, (token) => {
-      if (token === "%program") return serverConfig.programPath;
+      if (token === "%program") return `"${serverConfig.programPath}"`;
       if (token === "%map") return "map.txt";
       if (token === "%bots") return botsCommandLineParam;
       throw new ValidationError({

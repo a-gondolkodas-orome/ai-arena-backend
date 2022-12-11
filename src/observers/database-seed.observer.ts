@@ -12,6 +12,7 @@ import * as t from "io-ts";
 import { decodeJson } from "../codec";
 import md5 from "md5";
 import { toByteArray } from "base64-js";
+import { MatchService } from "../services";
 
 const exec = promisify(child_process.exec);
 
@@ -109,6 +110,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       };
 
       if (await this.gameRepo.exists(game.id)) {
+        await fsp.rm(MatchService.getGamePath(game.id), { recursive: true, force: true });
         await this.gameRepo.updateById(game.id, game);
       } else {
         await this.gameRepo.create(game);
