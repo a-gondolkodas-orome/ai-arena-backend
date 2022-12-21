@@ -6,12 +6,11 @@ import { Game } from "./game";
 import { GqlValue } from "../utils";
 import { Bot } from "./bot";
 
-// @objectType()
-// @model()
-// export class MatchResult {
-//   @field()
-//   scores: string;
-// }
+@objectType()
+export class MatchResult {
+  @field()
+  log: string;
+}
 
 @objectType()
 @model()
@@ -35,15 +34,16 @@ export class Match extends Entity {
   @field((type) => [Bot])
   bots: Bot[];
 
-  // @field({ nullable: true })
-  // @property()
-  // result: MatchResult;
+  @field((type) => MatchResult, { nullable: true })
+  result: MatchResult | undefined;
 
   @property()
-  log: {
-    file: Buffer;
-    fileName: string;
-  };
+  log:
+    | {
+        file: Buffer;
+        fileName: string;
+      }
+    | undefined;
 }
 
 @inputType()
@@ -90,4 +90,8 @@ export const MatchesResponse = createAuthErrorUnionType(
   "MatchesResponse",
   [Matches],
   (value: unknown) => ((value as GqlValue).__typename === "Matches" ? Matches : undefined),
+);
+
+export const MatchResponse = createAuthErrorUnionType("MatchResponse", [Match], (value: unknown) =>
+  (value as GqlValue).__typename === "Match" ? Match : undefined,
 );

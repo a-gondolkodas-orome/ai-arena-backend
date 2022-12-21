@@ -11,7 +11,7 @@ import {
   root,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { Match, MatchInput, StartMatchResponse } from "../models/match";
+import { Match, MatchInput, MatchResponse, StartMatchResponse } from "../models/match";
 import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
@@ -44,6 +44,16 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     }));
   }
 
+  @query((returns) => MatchResponse)
+  async getMatch(@arg("id") id: string) {
+    return handleAuthErrors(async () => {
+      const matches = await this.matchRepository.getUserMatches(this.executor, {
+        where: { id },
+      });
+      return matches.length ? { __typename: "Match", ...matches[0] } : null;
+    });
+  }
+
   @mutation((returns) => StartMatchResponse)
   async startMatch(@arg("matchInput") matchInput: MatchInput) {
     return handleAuthErrors(async () => {
@@ -67,7 +77,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
   @mutation((returns) => AuthError, { nullable: true })
   async deleteMatch(@arg("matchId") matchId: string) {
     return handleAuthErrors(async () => {
-      await this.matchRepository.deleteMatch(this.executor, matchId);
+      await this.matchService.deleteMatch(this.executor, matchId);
     });
   }
 
@@ -88,4 +98,9 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
   //     where: { id: 1 },
   //   });
   // }
+
+  @fieldResolver()
+  async result(@root() match: Match) {
+    return match.log ? { __typename: "MatchResult", log: match.log.file.toString() } : undefined;
+  }
 }

@@ -1,6 +1,6 @@
 import { injectable, BindingScope } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import { BotRepository, GameRepository } from "../repositories";
+import { BotRepository, GameRepository, MatchRepository } from "../repositories";
 import { Executor } from "../authorization";
 import { Match } from "../models/match";
 import path from "path";
@@ -41,6 +41,7 @@ export class MatchService {
   constructor(
     @repository("GameRepository") protected gameRepository: GameRepository,
     @repository("BotRepository") protected botRepository: BotRepository,
+    @repository("MatchRepository") protected matchRepository: MatchRepository,
   ) {}
 
   async startMatch(executor: Executor, match: Match) {
@@ -68,6 +69,13 @@ export class MatchService {
       });
     });
     await exec(serverRunCommand, { cwd: matchPath });
+    const logFileName = "match.log";
+    await this.matchRepository._systemAccess.updateById(match.id, {
+      log: {
+        file: await fsp.readFile(path.join(matchPath, logFileName)),
+        fileName: logFileName,
+      },
+    });
   }
 
   async prepareGameServer(executor: Executor, game: Game) {
@@ -81,7 +89,11 @@ export class MatchService {
     return this.prepareProgram(botBuildPath, bot.source, "bot");
   }
 
-  async prepareProgram(buildPath: string, programSource: ProgramSource, targetProgramName: string) {
+  protected async prepareProgram(
+    buildPath: string,
+    programSource: ProgramSource,
+    targetProgramName: string,
+  ) {
     const configFilePath = path.join(buildPath, "..", MatchService.AI_ARENA_CONFIG_FILE_NAME);
     const targetProgramPath = path.join(buildPath, "..", targetProgramName);
     const parseConfig = async () =>
@@ -119,5 +131,10 @@ export class MatchService {
       await fsp.rename(path.join(buildPath, config.programPath), targetProgramPath);
     }
     return { runCommand: config.run, programPath: targetProgramPath };
+  }
+
+  async deleteMatch(executor: Executor, matchId: string) {
+    await this.matchRepository.deleteMatch(executor, matchId);
+    await fsp.rm(MatchService.getMatchPath(matchId), { recursive: true, force: true });
   }
 }

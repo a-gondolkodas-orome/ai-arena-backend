@@ -68,7 +68,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   @mutation((returns) => AuthError, { nullable: true })
   async deleteBot(@arg("botId") botId: string) {
     return handleAuthErrors(async () => {
-      await this.botRepository.deleteBot(this.executor, botId);
+      await this.botService.deleteBot(this.executor, botId);
     });
   }
 

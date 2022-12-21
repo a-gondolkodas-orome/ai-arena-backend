@@ -7,6 +7,9 @@ import { BotController } from "../controllers";
 import { repository } from "@loopback/repository";
 import { BotRepository } from "../repositories";
 import { AuthorizationError } from "../errors";
+import { Executor } from "../authorization";
+import fsp from "fs/promises";
+import { MatchService } from "./match.service";
 
 @injectable({ scope: BindingScope.TRANSIENT })
 export class BotService {
@@ -57,5 +60,10 @@ export class BotService {
       });
     }
     return tokenData;
+  }
+
+  async deleteBot(executor: Executor, botId: string) {
+    await this.botRepository.deleteBot(executor, botId);
+    await fsp.rm(MatchService.getBotPath(botId), { recursive: true, force: true });
   }
 }
