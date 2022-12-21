@@ -11,7 +11,6 @@ import child_process from "child_process";
 import * as t from "io-ts";
 import { decodeJson } from "../codec";
 import md5 from "md5";
-import { toByteArray } from "base64-js";
 import { MatchService } from "../services";
 
 const exec = promisify(child_process.exec);
@@ -44,17 +43,6 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       });
     }
     await this.loadGames();
-    const placeholderCount = 4 - (await this.gameRepo.count()).count;
-    for (let i = 1; i <= placeholderCount; ++i) {
-      const name = `Place Holder #${i}`;
-      await this.gameRepo.create({
-        name,
-        shortDescription: "Hold the place for some awsome games coming soon.",
-        pictureBuffer: toByteArray(DatabaseSeedObserver.PLACEHOLDER_PICTURE_BASE64),
-        fullDescription: `# ${name} full description`,
-        playerCount: { min: 2, max: 4 },
-      });
-    }
   }
 
   protected static readonly GAME_CONFIG_FILE_NAME = "ai-arena.game.config.json";
