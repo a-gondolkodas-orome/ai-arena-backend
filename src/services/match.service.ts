@@ -104,10 +104,7 @@ export class MatchService {
     } else {
       await fsp.rm(buildPath, { recursive: true, force: true });
       await fsp.mkdir(buildPath, { recursive: true });
-      await fsp.writeFile(
-        path.join(buildPath, programSource.fileName),
-        programSource.file.buffer as NodeJS.ArrayBufferView,
-      );
+      await fsp.writeFile(path.join(buildPath, programSource.fileName), programSource.file);
       if (programSource.fileName.endsWith(".zip")) {
         await exec(`unzip ${programSource.fileName}`, { cwd: buildPath });
         await fsp.rename(

@@ -13,7 +13,7 @@ export class GraphqlAuthenticationProvider implements Provider<ContextFunction<E
     @repository(UserRepository) public userRepository: UserRepository,
   ) {}
 
-  value() {
+  value(): ContextFunction<ExpressContext> {
     return async (context: ExpressContext) => {
       return {
         ...context,

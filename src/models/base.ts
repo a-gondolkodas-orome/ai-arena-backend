@@ -1,4 +1,3 @@
-import Buffer from "buffer";
 import { model, property } from "@loopback/repository";
 
 @model()
