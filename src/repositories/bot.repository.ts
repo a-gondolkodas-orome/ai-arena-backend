@@ -1,7 +1,7 @@
 import { inject } from "@loopback/core";
 import { DefaultCrudRepository, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
-import { Bot, BotInput } from "../models/bot";
+import { Bot, BotInput, BotSubmitStage } from "../models/bot";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
 import { AccessLevel, authorize, Executor } from "../authorization";
@@ -53,6 +53,7 @@ export class BotRepository {
         {
           ...bot,
           userId: executor.id,
+          submitStatus: { stage: BotSubmitStage.REGISTERED },
           versionNumber: 0,
         },
         options,
@@ -62,7 +63,8 @@ export class BotRepository {
 
   async update(
     executor: Executor,
-    botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber">> & Pick<Bot, "id">,
+    botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber" | "submitStatus">> &
+      Pick<Bot, "id">,
     options?: Options,
   ) {
     let bot;

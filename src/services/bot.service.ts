@@ -10,8 +10,9 @@ import { AuthorizationError } from "../errors";
 import { Executor } from "../authorization";
 import fsp from "fs/promises";
 import { MatchService } from "./match.service";
+import EventEmitter from "events";
 
-@injectable({ scope: BindingScope.TRANSIENT })
+@injectable({ scope: BindingScope.SINGLETON })
 export class BotService {
   static readonly botSourceUploadTokenCodec = t.type(
     {
@@ -66,4 +67,6 @@ export class BotService {
     await this.botRepository.deleteBot(executor, botId);
     await fsp.rm(MatchService.getBotPath(botId), { recursive: true, force: true });
   }
+
+  sse = new EventEmitter();
 }

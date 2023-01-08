@@ -1,4 +1,4 @@
-import { injectable, BindingScope } from "@loopback/core";
+import { injectable, BindingScope, inject } from "@loopback/core";
 import { repository } from "@loopback/repository";
 import { BotRepository, GameRepository, MatchRepository } from "../repositories";
 import { Executor } from "../authorization";
@@ -13,6 +13,9 @@ import * as t from "io-ts";
 import { ProgramSource } from "../models/base";
 import { ValidationError } from "../errors";
 import { Game } from "../models/game";
+import { BotSubmitStage } from "../models/bot";
+import { AiArenaBindings } from "../keys";
+import { BotService } from "./bot.service";
 
 const exec = promisify(child_process.exec);
 
@@ -39,6 +42,7 @@ export class MatchService {
   }
 
   constructor(
+    @inject(AiArenaBindings.BOT_SERVICE) protected botService: BotService,
     @repository("GameRepository") protected gameRepository: GameRepository,
     @repository("BotRepository") protected botRepository: BotRepository,
     @repository("MatchRepository") protected matchRepository: MatchRepository,
@@ -86,7 +90,34 @@ export class MatchService {
   async prepareBot(executor: Executor, botId: string) {
     const bot = await this.botRepository.findById(executor, botId);
     const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
-    return this.prepareProgram(botBuildPath, bot.source, "bot");
+    const { runCommand, programPath } = await this.prepareProgram(botBuildPath, bot.source, "bot");
+    return { runCommand, programPath };
+  }
+
+  async checkBot(executor: Executor, botId: string) {
+    const isErrorWithMessage = (error: unknown): error is { message: string } =>
+      !!error && typeof (error as { message: string }).message === "string";
+    const bot = await this.botRepository.findById(executor, botId);
+    const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
+    try {
+      const { buildLog } = await this.prepareProgram(botBuildPath, bot.source, "bot");
+      await this.botRepository._systemAccess.updateById(botId, {
+        submitStatus: {
+          stage: BotSubmitStage.CHECK_SUCCESS,
+          log: (bot.submitStatus?.log ?? "") + buildLog,
+        },
+      });
+    } catch (error: unknown) {
+      const message = isErrorWithMessage(error) ? error.message : "Unknown error";
+      await this.botRepository._systemAccess.updateById(botId, {
+        submitStatus: {
+          stage: BotSubmitStage.CHECK_ERROR,
+          log: (bot.submitStatus?.log ?? "") + message,
+        },
+      });
+    } finally {
+      this.botService.sse.emit(bot.userId, { botUpdate: bot.id });
+    }
   }
 
   protected async prepareProgram(
@@ -99,6 +130,7 @@ export class MatchService {
     const parseConfig = async () =>
       decodeJson(MatchService.aiArenaConfigCodec, (await fsp.readFile(configFilePath)).toString());
     let config;
+    let buildLog;
     if (fs.existsSync(configFilePath) && fs.existsSync(targetProgramPath)) {
       config = await parseConfig();
     } else {
@@ -124,10 +156,10 @@ export class MatchService {
         );
       }
       config = await parseConfig();
-      await exec(config.build, { cwd: buildPath });
+      buildLog = (await exec(config.build, { cwd: buildPath })).stdout;
       await fsp.rename(path.join(buildPath, config.programPath), targetProgramPath);
     }
-    return { runCommand: config.run, programPath: targetProgramPath };
+    return { runCommand: config.run, programPath: targetProgramPath, buildLog };
   }
 
   async deleteMatch(executor: Executor, matchId: string) {

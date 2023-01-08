@@ -1,6 +1,14 @@
 import { AssertException } from "./errors";
 import { ObjectId } from "mongodb";
 
+export namespace Time {
+  export const msec = 1;
+  export const second = 1000 * msec;
+  export const minute = 60 * second;
+  export const hour = 60 * minute;
+  export const day = 24 * hour;
+}
+
 export function notNull<T>(value: T): Exclude<T, null | undefined> {
   if (value === null || value === undefined)
     throw new AssertException({

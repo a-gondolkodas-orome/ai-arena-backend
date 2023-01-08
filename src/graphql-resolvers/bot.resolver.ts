@@ -11,7 +11,7 @@ import {
   root,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { AddBotResponse, Bot, BotInput, BotsResponse } from "../models/bot";
+import { AddBotResponse, Bot, BotInput, BotResponse, BotsResponse } from "../models/bot";
 import { BotRepository, GameRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
@@ -40,6 +40,16 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
         where: { gameId },
       }),
     }));
+  }
+
+  @query((returns) => BotResponse)
+  async getBot(@arg("id") id: string) {
+    return handleAuthErrors(async () => {
+      const bots = await this.botRepository.getUserBots(this.executor, {
+        where: { id },
+      });
+      return bots.length ? { __typename: "Bot", ...bots[0] } : null;
+    });
   }
 
   @mutation((returns) => AddBotResponse)

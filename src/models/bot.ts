@@ -5,6 +5,31 @@ import { User } from "./user";
 import { Game } from "./game";
 import { GqlValue } from "../utils";
 import { ProgramSource } from "./base";
+import { registerEnumType } from "type-graphql";
+
+export enum BotSubmitStage {
+  REGISTERED = "REGISTERED",
+  SOURCE_UPLOAD_SUCCESS = "SOURCE_UPLOAD_SUCCESS",
+  SOURCE_UPLOAD_ERROR = "SOURCE_UPLOAD_ERROR",
+  CHECK_SUCCESS = "CHECK_SUCCESS",
+  CHECK_ERROR = "CHECK_ERROR",
+}
+
+registerEnumType(BotSubmitStage, {
+  name: "BotSubmitStage",
+});
+
+@objectType()
+@model()
+export class BotSubmitStatus {
+  @field((type) => BotSubmitStage)
+  @property()
+  stage: BotSubmitStage;
+
+  @field({ nullable: true })
+  @property()
+  log: string;
+}
 
 @objectType()
 @model()
@@ -26,6 +51,10 @@ export class Bot extends Entity {
   @field()
   @property()
   name: string;
+
+  @field()
+  @property()
+  submitStatus: BotSubmitStatus;
 
   @property()
   source: ProgramSource;
@@ -85,4 +114,8 @@ export class Bots {
 
 export const BotsResponse = createAuthErrorUnionType("BotsResponse", [Bots], (value: unknown) =>
   (value as GqlValue).__typename === "Bots" ? Bots : undefined,
+);
+
+export const BotResponse = createAuthErrorUnionType("BotResponse", [Bot], (value: unknown) =>
+  (value as GqlValue).__typename === "Bot" ? Bot : undefined,
 );
