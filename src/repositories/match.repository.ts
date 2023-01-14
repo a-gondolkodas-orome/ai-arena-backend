@@ -1,7 +1,7 @@
 import { inject } from "@loopback/core";
 import { DefaultCrudRepository, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
-import { Match, MatchInput } from "../models/match";
+import { Match, MatchInput, MatchRunStage } from "../models/match";
 import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
 import { AccessLevel, authorize, Executor } from "../authorization";
@@ -49,6 +49,7 @@ export class MatchRepository {
         {
           ...match,
           userId: executor.id,
+          runStatus: { stage: MatchRunStage.REGISTERED },
         },
         options,
       ),

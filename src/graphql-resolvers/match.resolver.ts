@@ -59,7 +59,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     return handleAuthErrors(async () => {
       try {
         const match = await this.matchRepository.create(this.executor, matchInput);
-        await this.matchService.startMatch(this.executor, match);
+        this.matchService.startMatch(this.executor, match).catch((e) => console.error(e));
         return { __typename: "Match", ...match };
       } catch (error) {
         if (error instanceof ValidationError) {

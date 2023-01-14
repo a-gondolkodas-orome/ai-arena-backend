@@ -1,8 +1,8 @@
-import { injectable, BindingScope, inject } from "@loopback/core";
+import { BindingScope, inject, injectable } from "@loopback/core";
 import { repository } from "@loopback/repository";
 import { BotRepository, GameRepository, MatchRepository } from "../repositories";
 import { Executor } from "../authorization";
-import { Match } from "../models/match";
+import { Match, MatchRunStage } from "../models/match";
 import path from "path";
 import fs from "fs";
 import fsp from "fs/promises";
@@ -16,10 +16,11 @@ import { Game } from "../models/game";
 import { BotSubmitStage } from "../models/bot";
 import { AiArenaBindings } from "../keys";
 import { BotService } from "./bot.service";
+import EventEmitter from "events";
 
 const exec = promisify(child_process.exec);
 
-@injectable({ scope: BindingScope.TRANSIENT })
+@injectable({ scope: BindingScope.SINGLETON })
 export class MatchService {
   static aiArenaConfigCodec = t.type({
     build: t.string,
@@ -48,36 +49,85 @@ export class MatchService {
     @repository("MatchRepository") protected matchRepository: MatchRepository,
   ) {}
 
+  sse = new EventEmitter();
+
   async startMatch(executor: Executor, match: Match) {
-    const game = await this.gameRepository.findById(executor, match.gameId);
-    const serverConfig = await this.prepareGameServer(executor, game);
-    const botConfigs = [];
-    for (const botId of match.botIds) {
-      botConfigs.push(await this.prepareBot(executor, botId));
+    let serverConfig: { runCommand: string; programPath: string; buildLog: string | undefined };
+    let game;
+    try {
+      game = await this.gameRepository.findById(executor, match.gameId);
+      serverConfig = await this.prepareGameServer(executor, game);
+      this.logMatchRunEvent(match, MatchRunStage.PREPARE_GAME_SERVER_DONE).catch((e) =>
+        console.error(e),
+      );
+    } catch (error: unknown) {
+      await this.logMatchRunEvent(match, MatchRunStage.PREPARE_GAME_SERVER_ERROR, error);
+      this.sse.emit(match.userId, { matchUpdate: match.id });
+      return;
     }
-    const matchPath = MatchService.getMatchPath(match.id);
-    await fsp.mkdir(matchPath, { recursive: true });
-    const mapPath = path.join(matchPath, "map.txt");
-    await fsp.writeFile(mapPath, game.maps[0]);
-    const botsCommandLineParam = botConfigs
-      .map((botConfig) => `"${botConfig.runCommand.replace("%program", botConfig.programPath)}"`)
-      .join(" ");
-    const serverRunCommand = serverConfig.runCommand.replaceAll(/%program|%map|%bots/g, (token) => {
-      if (token === "%program") return `"${serverConfig.programPath}"`;
-      if (token === "%map") return "map.txt";
-      if (token === "%bots") return botsCommandLineParam;
-      throw new ValidationError({
-        fieldErrors: {
-          runCommand: [`unknown replacement pattern: ${token}`],
+    const botConfigs = [];
+    try {
+      for (const botId of match.botIds) {
+        botConfigs.push(await this.prepareBot(executor, botId));
+      }
+      this.logMatchRunEvent(match, MatchRunStage.PREPARE_BOTS_DONE).catch((e) => console.error(e));
+    } catch (error: unknown) {
+      await this.logMatchRunEvent(match, MatchRunStage.PREPARE_BOTS_ERROR, error);
+      this.sse.emit(match.userId, { matchUpdate: match.id });
+      return;
+    }
+    try {
+      const matchPath = MatchService.getMatchPath(match.id);
+      await fsp.mkdir(matchPath, { recursive: true });
+      const mapPath = path.join(matchPath, "map.txt");
+      await fsp.writeFile(mapPath, game.maps[0]);
+      const botsCommandLineParam = botConfigs
+        .map((botConfig) => `"${botConfig.runCommand.replace("%program", botConfig.programPath)}"`)
+        .join(" ");
+      const serverRunCommand = serverConfig.runCommand.replaceAll(
+        /%program|%map|%bots/g,
+        (token) => {
+          if (token === "%program") return `"${serverConfig.programPath}"`;
+          if (token === "%map") return "map.txt";
+          if (token === "%bots") return botsCommandLineParam;
+          throw new ValidationError({
+            fieldErrors: {
+              runCommand: [`unknown replacement pattern: ${token}`],
+            },
+          });
+        },
+      );
+      await exec(serverRunCommand, { cwd: matchPath });
+      const logFileName = "match.log";
+      await this.matchRepository._systemAccess.updateById(match.id, {
+        log: {
+          file: await fsp.readFile(path.join(matchPath, logFileName)),
+          fileName: logFileName,
+        },
+        runStatus: {
+          stage: MatchRunStage.RUN_SUCCESS,
         },
       });
-    });
-    await exec(serverRunCommand, { cwd: matchPath });
-    const logFileName = "match.log";
+    } catch (error: unknown) {
+      await this.logMatchRunEvent(match, MatchRunStage.RUN_ERROR, error);
+    } finally {
+      this.sse.emit(match.userId, { matchUpdate: match.id });
+    }
+  }
+
+  protected async logMatchRunEvent(match: Match, stage: MatchRunStage, event?: unknown) {
+    const message =
+      event === undefined
+        ? undefined
+        : typeof event === "string"
+        ? event
+        : event instanceof Error || this.isErrorWithMessage(event)
+        ? event.message
+        : "Unknown error";
     await this.matchRepository._systemAccess.updateById(match.id, {
-      log: {
-        file: await fsp.readFile(path.join(matchPath, logFileName)),
-        fileName: logFileName,
+      runStatus: {
+        stage,
+        ...(message && { log: (match.runStatus?.log ?? "") + message + "\n" }),
       },
     });
   }
@@ -95,11 +145,9 @@ export class MatchService {
   }
 
   async checkBot(executor: Executor, botId: string) {
-    const isErrorWithMessage = (error: unknown): error is { message: string } =>
-      !!error && typeof (error as { message: string }).message === "string";
     const bot = await this.botRepository.findById(executor, botId);
-    const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
     try {
+      const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
       const { buildLog } = await this.prepareProgram(botBuildPath, bot.source, "bot");
       await this.botRepository._systemAccess.updateById(botId, {
         submitStatus: {
@@ -108,7 +156,7 @@ export class MatchService {
         },
       });
     } catch (error: unknown) {
-      const message = isErrorWithMessage(error) ? error.message : "Unknown error";
+      const message = this.isErrorWithMessage(error) ? error.message : "Unknown error";
       await this.botRepository._systemAccess.updateById(botId, {
         submitStatus: {
           stage: BotSubmitStage.CHECK_ERROR,
@@ -160,6 +208,10 @@ export class MatchService {
       await fsp.rename(path.join(buildPath, config.programPath), targetProgramPath);
     }
     return { runCommand: config.run, programPath: targetProgramPath, buildLog };
+  }
+
+  protected isErrorWithMessage(error: unknown): error is { message: string } {
+    return !!error && typeof (error as { message: string }).message === "string";
   }
 
   async deleteMatch(executor: Executor, matchId: string) {

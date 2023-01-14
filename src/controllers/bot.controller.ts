@@ -84,7 +84,7 @@ export class BotController {
         file: request.file.buffer,
       },
       submitStatus: {
-        stage: BotSubmitStage.SOURCE_UPLOAD_SUCCESS,
+        stage: BotSubmitStage.SOURCE_UPLOAD_DONE,
         log: bot.submitStatus.log,
       },
     });

@@ -42,7 +42,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     }));
   }
 
-  @query((returns) => BotResponse)
+  @query((returns) => BotResponse, { nullable: true })
   async getBot(@arg("id") id: string) {
     return handleAuthErrors(async () => {
       const bots = await this.botRepository.getUserBots(this.executor, {

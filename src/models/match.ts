@@ -5,6 +5,33 @@ import { User } from "./user";
 import { Game } from "./game";
 import { GqlValue } from "../utils";
 import { Bot } from "./bot";
+import { registerEnumType } from "type-graphql";
+
+export enum MatchRunStage {
+  REGISTERED = "REGISTERED",
+  PREPARE_GAME_SERVER_DONE = "PREPARE_GAME_SERVER_DONE",
+  PREPARE_GAME_SERVER_ERROR = "PREPARE_GAME_SERVER_ERROR",
+  PREPARE_BOTS_DONE = "PREPARE_BOTS_DONE",
+  PREPARE_BOTS_ERROR = "PREPARE_BOTS_ERROR",
+  RUN_SUCCESS = "RUN_SUCCESS",
+  RUN_ERROR = "RUN_ERROR",
+}
+
+registerEnumType(MatchRunStage, {
+  name: "MatchRunStage",
+});
+
+@objectType()
+@model()
+export class MatchRunStatus {
+  @field((type) => MatchRunStage)
+  @property()
+  stage: MatchRunStage;
+
+  @field({ nullable: true })
+  @property()
+  log: string;
+}
 
 @objectType()
 export class MatchResult {
@@ -33,6 +60,10 @@ export class Match extends Entity {
   botIds: string[];
   @field((type) => [Bot])
   bots: Bot[];
+
+  @field()
+  @property()
+  runStatus: MatchRunStatus;
 
   @field((type) => MatchResult, { nullable: true })
   result: MatchResult | undefined;
