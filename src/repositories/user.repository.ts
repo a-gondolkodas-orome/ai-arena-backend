@@ -35,7 +35,7 @@ export class UserRepository {
     authorize(AccessLevel.NONE, executor);
     await this.validateCreate(user);
     user.password = await hash(user.password, await genSalt());
-    return this.repo.create(user, options);
+    return this.repo.create({ ...user, roles: [] }, options);
   }
 
   async findOne(executor: Executor, filter?: Filter<User>, options?: Options) {

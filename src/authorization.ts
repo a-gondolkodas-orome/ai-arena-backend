@@ -1,4 +1,4 @@
-import { User } from "./models/user";
+import { Role, User } from "./models/user";
 import { AuthenticationError, AuthorizationError } from "./errors";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
@@ -20,11 +20,12 @@ export enum AccessLevel {
 export function authorize(
   requiredAccessLevel: Exclude<AccessLevel, AccessLevel.OWNER>,
   authInfo: Executor,
+  resourceOwner?: User["id"],
 ): void;
 export function authorize(
-  requiredAccessLevel: typeof AccessLevel.OWNER,
+  requiredAccessLevel: AccessLevel,
   authInfo: Executor,
-  resourceOwner: User["username"] | undefined,
+  resourceOwner: User["id"] | undefined,
 ): void;
 export function authorize(
   requiredAccessLevel: AccessLevel,
@@ -35,8 +36,8 @@ export function authorize(
     true,
     executor instanceof User,
     executor instanceof User && executor.id === resourceOwner,
-    executor instanceof User && executor.username === "admin", // TODO handle roles
-    executor instanceof User && executor.username === EXECUTOR_SYSTEM, // and here as well
+    executor instanceof User && executor.roles.includes(Role.ADMIN),
+    executor instanceof User && executor.username === EXECUTOR_SYSTEM,
   ].lastIndexOf(true);
   if (requiredAccessLevel !== AccessLevel.NONE && !executor) throw new AuthenticationError({});
   if (executorAccessLevel < Object.values(AccessLevel).indexOf(requiredAccessLevel))

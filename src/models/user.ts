@@ -1,6 +1,15 @@
 import { field, ID, objectType } from "@loopback/graphql";
 import { Entity, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
+import { registerEnumType } from "type-graphql";
+
+export enum Role {
+  ADMIN = "ADMIN",
+}
+
+registerEnumType(Role, {
+  name: "Role",
+});
 
 @objectType()
 @model({ settings: { strict: false } })
@@ -19,6 +28,10 @@ export class User extends Entity {
 
   @property()
   password: string;
+
+  @field((type) => [Role])
+  @property.array(String)
+  roles: Role[];
 }
 
 @objectType()

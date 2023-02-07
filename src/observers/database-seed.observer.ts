@@ -3,7 +3,7 @@ import { DefaultCrudRepository } from "@loopback/repository";
 import { EXECUTOR_SYSTEM } from "../authorization";
 import { MongoDataSource } from "../datasources";
 import { Game } from "../models/game";
-import { User } from "../models/user";
+import { Role, User } from "../models/user";
 import path from "path";
 import fsp from "fs/promises";
 import { promisify } from "util";
@@ -40,6 +40,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
         username: "admin",
         email: "admin@ai-arena.com",
         password: "admin",
+        roles: [Role.ADMIN],
       });
     }
     await this.loadGames();
