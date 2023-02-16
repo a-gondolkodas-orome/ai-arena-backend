@@ -1,13 +1,11 @@
-import { injectable, BindingScope, inject } from "@loopback/core";
+import { injectable, BindingScope, service } from "@loopback/core";
 import { Bot } from "../models/bot";
 import { JwtService } from "./jwt.service";
-import { AiArenaBindings } from "../keys";
 import * as t from "io-ts";
 import { BotController } from "../controllers";
 import { repository } from "@loopback/repository";
 import { BotRepository } from "../repositories";
 import { AuthorizationError } from "../errors";
-import { Executor } from "../authorization";
 import fsp from "fs/promises";
 import { MatchService } from "./match.service";
 import EventEmitter from "events";
@@ -24,12 +22,12 @@ export class BotService {
 
   constructor(
     @repository("BotRepository") protected botRepository: BotRepository,
-    @inject(AiArenaBindings.JWT_SERVICE) protected jwtService: JwtService,
+    @service() protected jwtService: JwtService,
   ) {}
 
   async getBotSourceUploadLink(bot: Bot) {
     const newVersionNumber = bot.versionNumber + 1;
-    await this.botRepository._systemAccess.updateById(bot.id, {
+    await this.botRepository.updateById(bot.id, {
       versionNumber: newVersionNumber,
     });
     const token = await this.jwtService.generateUniversalToken(
@@ -48,7 +46,7 @@ export class BotService {
       BotService.botSourceUploadTokenCodec,
       token,
     );
-    const bot = await this.botRepository._systemAccess.findOne({
+    const bot = await this.botRepository.findOne({
       where: {
         id: tokenData.bot.id,
         versionNumber: tokenData.bot.versionNumber,
@@ -63,8 +61,8 @@ export class BotService {
     return tokenData;
   }
 
-  async deleteBot(executor: Executor, botId: string) {
-    await this.botRepository.deleteBot(executor, botId);
+  async deleteBot(botId: string) {
+    await this.botRepository.deleteById(botId);
     await fsp.rm(MatchService.getBotPath(botId), { recursive: true, force: true });
   }
 

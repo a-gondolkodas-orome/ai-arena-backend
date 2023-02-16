@@ -1,5 +1,5 @@
-import { inject } from "@loopback/core";
-import { arg, mutation, query, resolver } from "@loopback/graphql";
+import { inject, service } from "@loopback/core";
+import { arg, GraphQLBindings, mutation, query, resolver, ResolverData } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { UserRepository } from "../repositories";
 import {
@@ -11,31 +11,42 @@ import {
 } from "../models/auth";
 import { TokenServiceBindings } from "@loopback/authentication-jwt";
 import { TokenService } from "@loopback/authentication";
-import { AiArenaBindings } from "../keys";
 import { UserService } from "../services";
 import { SecurityBindings, UserProfile } from "@loopback/security";
-import { ValidationError, validationErrorCodec } from "../errors";
+import { AuthenticationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
+import { Actor, AuthorizationService } from "../services/authorization.service";
+import { BaseResolver } from "./base.resolver";
+import { User, UserResponse } from "../models/user";
+import { notNull } from "../utils";
 
 @resolver()
-export class AuthResolver {
+export class AuthResolver extends BaseResolver<Actor> {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE) public jwtService: TokenService,
-    @inject(AiArenaBindings.USER_SERVICE) public userService: UserService,
+    @service() public userService: UserService,
+    @service() protected authorizationService: AuthorizationService,
     @inject(SecurityBindings.USER, { optional: true }) public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
-  ) {}
+    @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
+  ) {
+    super(resolverData, false);
+  }
 
-  @mutation((returns) => RegistrationResponse)
+  @mutation(() => RegistrationResponse)
   async register(
     @arg("registrationData") registrationData: RegistrationInput,
   ): Promise<typeof RegistrationResponse> {
     return handleAuthErrors(async () => {
       try {
-        const user = await this.userRepository.create(null, registrationData);
-        const userProfile = this.userService.convertToUserProfile(user);
-        const token = await this.jwtService.generateToken(userProfile);
-        return { user, token };
+        return await User.create(
+          this.actor,
+          registrationData,
+          this.authorizationService,
+          this.userRepository,
+          this.userService,
+          this.jwtService,
+        );
       } catch (error) {
         if (error instanceof ValidationError) {
           return {
@@ -49,13 +60,28 @@ export class AuthResolver {
     });
   }
 
-  @query((returns) => LoginResponse)
+  @query(() => LoginResponse)
   async login(@arg("credentials") credentials: Credentials): Promise<typeof LoginResponse> {
     return handleAuthErrors(async () => {
-      const user = await this.userService.verifyCredentials(credentials);
-      const userProfile = this.userService.convertToUserProfile(user);
-      const token = await this.jwtService.generateToken(userProfile);
-      return { token };
+      return User.login(credentials, this.userService, this.jwtService);
+    });
+  }
+
+  @query(() => UserResponse)
+  async profile(): Promise<typeof UserResponse> {
+    return handleAuthErrors(async () => {
+      if (!this.actor) throw new AuthenticationError({});
+      return Object.assign(
+        notNull(
+          await User.getUser(
+            this.actor,
+            this.actor.id,
+            this.authorizationService,
+            this.userRepository,
+          ),
+        ),
+        { __typename: "User" },
+      );
     });
   }
 }

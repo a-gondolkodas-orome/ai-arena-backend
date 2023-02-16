@@ -1,104 +1,46 @@
-import { inject } from "@loopback/core";
-import { DefaultCrudRepository, repository } from "@loopback/repository";
+import { Getter, inject } from "@loopback/core";
+import { BelongsToAccessor, DefaultCrudRepository, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
-import { Bot, BotInput, BotSubmitStage } from "../models/bot";
-import { Filter } from "@loopback/filter";
+import { Bot, BotInput, BotRelations, BotSubmitStage } from "../models/bot";
 import { Options } from "@loopback/repository/src/common-types";
-import { AccessLevel, authorize, Executor } from "../authorization";
-import { assertValue, convertObjectIdsToString } from "../utils";
+import { convertObjectIdsToString } from "../utils";
 import { GameRepository } from "./game.repository";
-import { AuthorizationError, ValidationError } from "../errors";
+import { ValidationError } from "../errors";
 import { User } from "../models/user";
+import { UserRepository } from "./user.repository";
+import { Game } from "../models/game";
 
-export class BotRepository {
+export class BotRepository extends DefaultCrudRepository<
+  Bot,
+  typeof Bot.prototype.id,
+  BotRelations
+> {
   constructor(
     @inject("datasources.mongo") dataSource: MongoDataSource,
-    @repository("GameRepository") readonly gameRepository: GameRepository,
+    @repository.getter("UserRepository") readonly getUserRepository: Getter<UserRepository>,
+    @repository.getter("GameRepository") readonly getGameRepository: Getter<GameRepository>,
   ) {
-    this.repo = new DefaultCrudRepository(Bot, dataSource);
+    super(Bot, dataSource);
+    this.user = this.createBelongsToAccessorFor("user", getUserRepository);
+    this.registerInclusionResolver("user", this.user.inclusionResolver);
+    this.game = this.createBelongsToAccessorFor("game", getGameRepository);
+    this.registerInclusionResolver("game", this.game.inclusionResolver);
   }
 
-  protected repo: DefaultCrudRepository<Bot, typeof Bot.prototype.id, {}>;
+  readonly user: BelongsToAccessor<User, typeof Bot.prototype.id>;
+  readonly game: BelongsToAccessor<Game, typeof Bot.prototype.id>;
 
-  get _systemAccess() {
-    return this.repo;
-  }
-
-  async getUserBots(executor: Executor, filter?: Filter<Bot>, options?: Options) {
-    authorize(AccessLevel.USER, executor);
-    assertValue(executor);
-    return (
-      await this.repo.find({ ...filter, where: { ...filter?.where, userId: executor.id } }, options)
-    ).map((bot) => convertObjectIdsToString(bot));
-  }
-
-  async findById(executor: Executor, botId: string) {
-    const bot = convertObjectIdsToString(await this.repo.findById(botId));
-    authorize(AccessLevel.OWNER, executor, bot.userId);
-    return bot;
-  }
-
-  async findOne(executor: Executor, filter?: Filter<Bot>, options?: Options) {
-    authorize(AccessLevel.ADMIN, executor);
-    const bot = await this.repo.findOne(filter, options);
-    return bot ? convertObjectIdsToString(bot) : bot;
-  }
-
-  async create(executor: Executor, bot: BotInput, options?: Options) {
-    authorize(AccessLevel.USER, executor);
-    assertValue(executor);
-    await this.validateCreate(executor, bot);
-    return convertObjectIdsToString(
-      await this.repo.create(
-        {
-          ...bot,
-          userId: executor.id,
-          submitStatus: { stage: BotSubmitStage.REGISTERED },
-          versionNumber: 0,
-        },
-        options,
-      ),
-    );
-  }
-
-  async update(
-    executor: Executor,
-    botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber" | "submitStatus">> &
-      Pick<Bot, "id">,
-    options?: Options,
-  ) {
-    let bot;
-    try {
-      bot = convertObjectIdsToString(await this.repo.findById(botUpdate.id));
-    } catch (error) {
-      throw new AuthorizationError({});
-    }
-    authorize(AccessLevel.OWNER, executor, bot.userId);
-    await this.repo.updateById(botUpdate.id, botUpdate, options);
-  }
-
-  async deleteBot(executor: Executor, botId: string, options?: Options) {
-    let bot;
-    try {
-      bot = convertObjectIdsToString(await this.repo.findById(botId));
-    } catch (error) {
-      throw new AuthorizationError({});
-    }
-    authorize(AccessLevel.OWNER, executor, bot.userId);
-    await this.repo.deleteById(botId, options);
-  }
-
-  protected async validateCreate(owner: User, bot: BotInput) {
+  async validateAndCreate(user: User, bot: BotInput, options?: Options) {
     const nameErrors = [];
     if (bot.name.length === 0) nameErrors.push("Bot name must not be empty");
-    const botCount = await this.repo.count({
-      userId: owner.id,
+    const botCount = await this.count({
+      userId: user.id,
       gameId: bot.gameId,
       name: bot.name,
     });
     if (botCount.count > 0) nameErrors.push("Bot name already in use");
     const gameIdErrors = [];
-    if (!(await this.gameRepository._systemAccess.exists(bot.gameId)))
+    if (!(await (await this.getGameRepository()).exists(bot.gameId)))
       gameIdErrors.push("Game not found.");
     if (nameErrors.length || gameIdErrors.length) {
       throw new ValidationError({
@@ -108,5 +50,17 @@ export class BotRepository {
         },
       });
     }
+
+    return convertObjectIdsToString(
+      await this.create(
+        {
+          ...bot,
+          userId: user.id,
+          submitStatus: { stage: BotSubmitStage.REGISTERED },
+          versionNumber: 0,
+        },
+        options,
+      ),
+    );
   }
 }

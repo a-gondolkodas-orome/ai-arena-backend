@@ -5,12 +5,14 @@ import { compare } from "bcryptjs";
 import { UserRepository } from "../repositories";
 import { User } from "../models/user";
 import { AssertException, AuthenticationError } from "../errors";
+import { BindingScope, injectable } from "@loopback/core";
 
 export type Credentials = {
   email: string;
   password: string;
 };
 
+@injectable({ scope: BindingScope.SINGLETON })
 export class UserService implements AuthUserService<User, Credentials> {
   constructor(@repository(UserRepository) public userRepository: UserRepository) {}
 
@@ -18,7 +20,7 @@ export class UserService implements AuthUserService<User, Credentials> {
     if (credentials.email.length === 0) {
       throw new AuthenticationError({ message: "Invalid email or password." });
     }
-    const users = await this.userRepository._systemAccess.find({
+    const users = await this.userRepository.find({
       where: { email: credentials.email },
     });
     if (users.length > 1) {

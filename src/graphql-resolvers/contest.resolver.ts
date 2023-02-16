@@ -1,4 +1,4 @@
-import { inject } from "@loopback/core";
+import { inject, service } from "@loopback/core";
 import {
   arg,
   fieldResolver,
@@ -11,7 +11,6 @@ import {
   root,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { GameRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
 import {
@@ -24,47 +23,40 @@ import {
 import { ContestRepository } from "../repositories/contest.repository";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
+import { Game } from "../models/game";
+import { Bot } from "../models/bot";
+import { User } from "../models/user";
+import { Match } from "../models/match";
+import { AuthorizationService } from "../services/authorization.service";
+import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
 
-@resolver((of) => Contest)
+@resolver(() => Contest)
 export class ContestResolver extends BaseResolver implements ResolverInterface<Contest> {
   constructor(
-    // @repository("BotRepository") protected botRepository: BotRepository,
-    @repository("UserRepository") protected userRepository: UserRepository,
-    @repository("GameRepository") protected gameRepository: GameRepository,
-    @repository("ContestRepository") protected contestRepository: ContestRepository,
-    // @inject(AiArenaBindings.BOT_SERVICE) protected botService: BotService,
+    @service() protected authorizationService: AuthorizationService,
+    @repository(BotRepository) protected botRepository: BotRepository,
+    @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(GameRepository) protected gameRepository: GameRepository,
+    @repository(MatchRepository) protected matchRepository: MatchRepository,
+    @repository(ContestRepository) protected contestRepository: ContestRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
   ) {
     super(resolverData);
   }
 
-  @query((returns) => ContestsResponse)
-  async getContests(): Promise<typeof ContestsResponse> {
-    return handleAuthErrors(async () => ({
-      __typename: "Contests",
-      contests: await this.contestRepository.find(this.executor),
-    }));
-  }
-
-  @query((returns) => ContestResponse, { nullable: true })
-  async getContest(@arg("id") id: string) {
-    return handleAuthErrors(async () => {
-      const contests = await this.contestRepository.find(this.executor, {
-        where: { id },
-      });
-      return contests.length ? { __typename: "Contest", ...contests[0] } : null;
-    });
-  }
-
-  @mutation((returns) => CreateContestResponse)
+  @mutation(() => CreateContestResponse)
   async createContest(@arg("contestInput") contestInput: ContestInput) {
     return handleAuthErrors(async () => {
       try {
-        const contest = await this.contestRepository.create(this.executor, contestInput);
-        return {
-          __typename: "Contest",
-          ...contest,
-        };
+        return Object.assign(
+          await Contest.create(
+            this.actor,
+            contestInput,
+            this.authorizationService,
+            this.contestRepository,
+          ),
+          { __typename: "Contest" },
+        );
       } catch (error) {
         if (error instanceof ValidationError) {
           return {
@@ -77,21 +69,73 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
       }
     });
   }
-  //
-  // @mutation((returns) => AuthError, { nullable: true })
-  // async deleteBot(@arg("botId") botId: string) {
-  //   return handleAuthErrors(async () => {
-  //     await this.botService.deleteBot(this.executor, botId);
-  //   });
-  // }
-  //
-  @fieldResolver()
-  async owner(@root() contest: Contest) {
-    return this.userRepository.findById(this.executor, contest.ownerId);
+
+  @query(() => ContestsResponse)
+  async getContests(): Promise<typeof ContestsResponse> {
+    return handleAuthErrors(async () => ({
+      __typename: "Contests",
+      contests: await Contest.getContests(
+        this.actor,
+        this.authorizationService,
+        this.contestRepository,
+      ),
+    }));
+  }
+
+  @query(() => ContestResponse, { nullable: true })
+  async getContest(@arg("id") id: string) {
+    return handleAuthErrors(async () => {
+      const contest = await Contest.getContest(
+        this.actor,
+        id,
+        this.authorizationService,
+        this.contestRepository,
+      );
+      return contest ? Object.assign(contest, { __typename: "Contest" }) : null;
+    });
   }
 
   @fieldResolver()
+  async id(@root() contest: Contest) {
+    return contest.getIdAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver(() => Game)
   async game(@root() contest: Contest) {
-    return this.gameRepository.findById(this.executor, contest.gameId);
+    return contest.getGameAuthorized(this.actor, this.authorizationService, this.gameRepository);
+  }
+
+  @fieldResolver(() => User)
+  async owner(@root() contest: Contest) {
+    return contest.getOwnerAuthorized(this.actor, this.authorizationService, this.userRepository);
+  }
+
+  @fieldResolver()
+  async name(@root() contest: Contest) {
+    return contest.getNameAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver()
+  async date(@root() contest: Contest) {
+    return contest.getDateAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver(() => [Bot])
+  async bots(@root() contest: Contest) {
+    return contest.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
+  }
+
+  @fieldResolver(() => [Match])
+  async matches(@root() contest: Contest) {
+    return contest.getMatchesAuthorized(
+      this.actor,
+      this.authorizationService,
+      this.matchRepository,
+    );
+  }
+
+  @fieldResolver()
+  async status(@root() contest: Contest) {
+    return contest.getStatusAuthorized(this.actor, this.authorizationService);
   }
 }

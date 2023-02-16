@@ -1,11 +1,20 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
-import { belongsTo, Entity, model, property } from "@loopback/repository";
+import { belongsTo, Entity, model, property, referencesMany } from "@loopback/repository";
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
-import { Game } from "./game";
+import { Game, GameWithRelations } from "./game";
 import { GqlValue } from "../utils";
-import { Bot } from "./bot";
+import { Bot, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
+import { UserWithRelations } from "@loopback/authentication-jwt";
+import {
+  Action,
+  Actor,
+  AuthorizationService,
+  ResourceCollection,
+} from "../services/authorization.service";
+import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
+import { MatchService } from "../services";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -24,7 +33,7 @@ registerEnumType(MatchRunStage, {
 @objectType()
 @model()
 export class MatchRunStatus {
-  @field((type) => MatchRunStage)
+  @field(() => MatchRunStage)
   @property()
   stage: MatchRunStage;
 
@@ -42,31 +51,118 @@ export class MatchResult {
 @objectType()
 @model()
 export class Match extends Entity {
-  @field((type) => ID)
+  static async create(
+    actor: User,
+    matchInput: MatchInput,
+    authorizationService: AuthorizationService,
+    matchRepository: MatchRepository,
+    matchService: MatchService,
+  ) {
+    await authorizationService.authorize(actor, Action.CREATE, matchInput);
+    const match = await matchRepository.validateAndCreate(actor, matchInput);
+    matchService.startMatch(match).catch((e) => console.error(e)); // TODO improve logging
+    return match;
+  }
+
+  static async getMatches(
+    actor: User,
+    gameId: string,
+    authorizationService: AuthorizationService,
+    matchRepository: MatchRepository,
+  ) {
+    await authorizationService.authorize(actor, Action.READ, ResourceCollection.MATCHES);
+    return matchRepository.find({
+      where: { gameId, userId: actor.id },
+    });
+  }
+
+  static async getMatch(
+    actor: Actor,
+    id: string,
+    authorizationService: AuthorizationService,
+    matchRepository: MatchRepository,
+  ) {
+    const match = await matchRepository.findOne({
+      where: { id },
+    });
+    if (match) await authorizationService.authorize(actor, Action.READ, match);
+    return match;
+  }
+
+  static async delete(
+    actor: Actor,
+    id: string,
+    authorizationService: AuthorizationService,
+    matchRepository: MatchRepository,
+    matchService: MatchService,
+  ) {
+    const match = await matchRepository.findOne({ where: { id } });
+    await authorizationService.authorize(actor, Action.DELETE, match);
+    await matchService.deleteMatch(id);
+  }
+
+  @field(() => ID)
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
+  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "id");
+    return this.id;
+  }
+
   @belongsTo(() => User, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   userId: string;
-  @field()
-  user: User;
+
+  async getUserAuthorized(
+    actor: Actor,
+    authorizationService: AuthorizationService,
+    userRepository: UserRepository,
+  ) {
+    await authorizationService.authorize(actor, Action.READ, this, "user");
+    return userRepository.findById(this.userId);
+  }
 
   @belongsTo(() => Game, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   gameId: string;
-  @field()
-  game: Game;
 
-  @property.array(String)
+  async getGameAuthorized(
+    actor: Actor,
+    authorizationService: AuthorizationService,
+    gameRepository: GameRepository,
+  ) {
+    await authorizationService.authorize(actor, Action.READ, this, "game");
+    return gameRepository.findById(this.userId);
+  }
+
+  @referencesMany(() => Bot)
   botIds: string[];
-  @field((type) => [Bot])
-  bots: Bot[];
+
+  async getBotsAuthorized(
+    actor: Actor,
+    authorizationService: AuthorizationService,
+    botRepository: BotRepository,
+  ) {
+    await authorizationService.authorize(actor, Action.READ, this, "bots");
+    return botRepository.find({ where: { id: { inq: this.botIds } } });
+  }
 
   @field()
   @property()
   runStatus: MatchRunStatus;
 
-  @field((type) => MatchResult, { nullable: true })
-  result: MatchResult | undefined;
+  async getRunStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "runStatus");
+    return this.runStatus;
+  }
+
+  get result() {
+    return this.log && { __typename: "MatchResult", log: this.log.file.toString() };
+  }
+
+  async getResultAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "result");
+    return this.result;
+  }
 
   @property()
   log:
@@ -77,43 +173,51 @@ export class Match extends Entity {
     | undefined;
 }
 
+export interface MatchRelations {
+  user: UserWithRelations;
+  game: GameWithRelations;
+  bots: BotWithRelations[];
+}
+
+export type MatchWithRelations = Match & MatchRelations;
+
 @inputType()
 export class MatchInput {
   @field()
   gameId: string;
 
-  @field((type) => [String])
+  @field(() => [String])
   botIds: string[];
 }
 
 @objectType()
-export class StartMatchFieldErrors {
-  @field((type) => [String!], { nullable: true })
+export class CreateMatchFieldErrors {
+  @field(() => [String!], { nullable: true })
   gameId?: string[];
-  @field((type) => [String!], { nullable: true })
+  @field(() => [String!], { nullable: true })
   botIds?: string[];
 }
 
 @objectType({ implements: GraphqlError })
-export class StartMatchError extends GraphqlError {
+export class CreateMatchError extends GraphqlError {
   @field()
-  fieldErrors: StartMatchFieldErrors;
+  fieldErrors: CreateMatchFieldErrors;
 }
 
-export const StartMatchResponse = createAuthErrorUnionType(
-  "StartMatchResponse",
-  [Match, StartMatchError],
+export const CreateMatchResponse = createAuthErrorUnionType(
+  "CreateMatchResponse",
+  [Match, CreateMatchError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Match"
       ? Match
-      : (value as GqlValue).__typename === "StartMatchError"
-      ? StartMatchError
+      : (value as GqlValue).__typename === "CreateMatchError"
+      ? CreateMatchError
       : undefined,
 );
 
 @objectType()
 export class Matches {
-  @field((type) => [Match])
+  @field(() => [Match])
   matches: Match[];
 }
 

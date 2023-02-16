@@ -1,24 +1,27 @@
-import { AssertException } from "../errors";
-import { Executor, isExecutor } from "../authorization";
-import { GraphQLBindings, ResolverData } from "@loopback/graphql";
-import { inject } from "@loopback/core";
+import { AssertException, AuthenticationError } from "../errors";
+import { ResolverData } from "@loopback/graphql";
+import { Actor, isActor } from "../services/authorization.service";
+import { User } from "../models/user";
 
-export class BaseResolver {
-  constructor(@inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData) {
+export class BaseResolver<A extends Actor = User> {
+  constructor(resolverData: ResolverData, authenticated = true) {
     const context = resolverData.context;
-    if (!this.isContextWithExecutor(context)) {
+    if (!this.isContextWithActor(context, authenticated)) {
       throw new AssertException({
         message: "BaseResolver: unhandled context structure",
         values: { context },
       });
     }
-    this.executor = context.executor;
+    this.actor = context.actor;
   }
 
-  protected readonly executor: Executor;
+  protected readonly actor: A;
 
-  protected isContextWithExecutor(value: unknown): value is { executor: Executor } {
-    const context = value as { executor: unknown };
-    return isExecutor(context.executor);
+  protected isContextWithActor(value: unknown, authenticated: boolean): value is { actor: A } {
+    const context = value as { actor: unknown };
+    if (authenticated && !context.actor) {
+      throw new AuthenticationError({});
+    }
+    return isActor(context.actor);
   }
 }

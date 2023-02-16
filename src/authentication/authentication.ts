@@ -1,5 +1,5 @@
 import { HttpErrors, RedirectRoute, Request } from "@loopback/rest";
-import { Executor } from "../authorization";
+import { Actor } from "../services/authorization.service";
 import { AuthenticationStrategy } from "@loopback/authentication";
 import { UserRepository } from "../repositories";
 
@@ -7,7 +7,7 @@ export async function authenticateRequest(
   authStrategy: AuthenticationStrategy,
   userRepository: UserRepository,
   request: Request,
-): Promise<Executor> {
+): Promise<Actor> {
   let result;
   try {
     result = await authStrategy.authenticate(request);
@@ -16,7 +16,7 @@ export async function authenticateRequest(
     throw error;
   }
   return !(result instanceof RedirectRoute) && result?.id
-    ? userRepository._systemAccess.findOne({
+    ? userRepository.findOne({
         where: { id: result.id },
       })
     : null;

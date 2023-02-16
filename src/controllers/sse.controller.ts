@@ -1,6 +1,5 @@
 import { get, Request, Response, RestBindings } from "@loopback/rest";
-import { inject } from "@loopback/core";
-import { AiArenaBindings } from "../keys";
+import { inject, service } from "@loopback/core";
 import { BotService, MatchService } from "../services";
 import { HttpStatusCode } from "../errors";
 import { EVENT_TYPE__BOT, EVENT_TYPE__MATCH } from "../common";
@@ -9,8 +8,8 @@ import { Time } from "../utils";
 
 export class SseController {
   constructor(
-    @inject(AiArenaBindings.BOT_SERVICE) protected botService: BotService,
-    @inject(AiArenaBindings.MATCH_SERVICE) protected matchService: MatchService,
+    @service() protected botService: BotService,
+    @service() protected matchService: MatchService,
   ) {}
 
   @get("/sse")
@@ -18,11 +17,11 @@ export class SseController {
     @inject(RestBindings.Http.REQUEST) request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ) {
-    if (!request.executor) {
+    if (!request.actor) {
       response.sendStatus(HttpStatusCode.HTTP_401_UNAUTHORIZED);
       return;
     }
-    const userId = request.executor.id;
+    const userId = request.actor.id;
     response.status(HttpStatusCode.HTTP_200_OK);
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");

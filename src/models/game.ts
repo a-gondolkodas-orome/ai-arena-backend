@@ -2,6 +2,15 @@ import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { Entity, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
 import { ProgramSource } from "./base";
+import { GqlValue } from "../utils";
+import { fromByteArray } from "base64-js";
+import {
+  Action,
+  Actor,
+  AuthorizationService,
+  ResourceCollection,
+} from "../services/authorization.service";
+import { GameRepository } from "../repositories";
 
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")
@@ -19,32 +28,86 @@ export class PlayerCount {
 @objectType()
 @model()
 export class Game extends Entity {
-  @field((type) => ID)
+  static async getGames(
+    actor: Actor,
+    authorizationService: AuthorizationService,
+    gameRepository: GameRepository,
+  ) {
+    await authorizationService.authorize(actor, Action.READ, ResourceCollection.GAMES);
+    return gameRepository.find();
+  }
+
+  static async getGame(
+    actor: Actor,
+    id: string,
+    authorizationService: AuthorizationService,
+    gameRepository: GameRepository,
+  ) {
+    const game = await gameRepository.findOne({
+      where: { id },
+    });
+    if (game) await authorizationService.authorize(actor, Action.READ, game);
+    return game;
+  }
+
+  @field(() => ID)
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
+
+  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "id");
+    return this.id;
+  }
 
   @field()
   @property()
   name: string;
 
+  async getNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "name");
+    return this.name;
+  }
+
   @field()
   @property()
   shortDescription: string;
 
-  /** base64 representation of a "profile" picture for the game */
-  @field()
-  picture: string;
+  async getShortDescriptionAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "shortDescription");
+    return this.shortDescription;
+  }
+
   @property()
   pictureBuffer: Buffer;
+
+  get picture() {
+    return fromByteArray(this.pictureBuffer);
+  }
+
+  /** base64 representation of a "profile" picture for the game */
+  async getPictureAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "picture");
+    return this.picture;
+  }
 
   /** The complete definition of the game, including the communication protocol. */
   @field()
   @property()
   fullDescription: string;
 
+  async getFullDescriptionAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "fullDescription");
+    return this.fullDescription;
+  }
+
   @field()
   @property()
   playerCount: PlayerCount;
+
+  async getPlayerCountAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "playerCount");
+    return this.playerCount;
+  }
 
   @property.array(String)
   maps: string[];
@@ -52,6 +115,10 @@ export class Game extends Entity {
   @property()
   server: ProgramSource;
 }
+
+export interface GameRelations {}
+
+export type GameWithRelations = Game & GameRelations;
 
 @inputType()
 export class GameInput {
@@ -74,15 +141,15 @@ export class GameInput {
 }
 
 export const GameResponse = createAuthErrorUnionType("GameResponse", [Game], (value: unknown) =>
-  typeof value === "object" && value && "shortDescription" in value ? Game : undefined,
+  (value as GqlValue).__typename === "Game" ? Game : undefined,
 );
 
 @objectType()
 export class Games {
-  @field((type) => [Game])
+  @field(() => [Game])
   games: Game[];
 }
 
 export const GamesResponse = createAuthErrorUnionType("GamesResponse", [Games], (value: unknown) =>
-  typeof value === "object" && value && "games" in value ? Games : undefined,
+  (value as GqlValue).__typename === "Games" ? Games : undefined,
 );

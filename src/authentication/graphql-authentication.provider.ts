@@ -17,7 +17,7 @@ export class GraphqlAuthenticationProvider implements Provider<ContextFunction<E
     return async (context: ExpressContext) => {
       return {
         ...context,
-        executor: await authenticateRequest(this.authStrategy, this.userRepository, context.req),
+        actor: await authenticateRequest(this.authStrategy, this.userRepository, context.req),
       };
     };
   }

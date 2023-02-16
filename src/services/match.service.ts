@@ -1,7 +1,6 @@
-import { BindingScope, inject, injectable } from "@loopback/core";
+import { BindingScope, injectable, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
 import { BotRepository, GameRepository, MatchRepository } from "../repositories";
-import { Executor } from "../authorization";
 import { Match, MatchRunStage } from "../models/match";
 import path from "path";
 import fs from "fs";
@@ -14,7 +13,6 @@ import { ProgramSource } from "../models/base";
 import { ValidationError } from "../errors";
 import { Game } from "../models/game";
 import { BotSubmitStage } from "../models/bot";
-import { AiArenaBindings } from "../keys";
 import { BotService } from "./bot.service";
 import EventEmitter from "events";
 
@@ -43,7 +41,7 @@ export class MatchService {
   }
 
   constructor(
-    @inject(AiArenaBindings.BOT_SERVICE) protected botService: BotService,
+    @service() protected botService: BotService,
     @repository("GameRepository") protected gameRepository: GameRepository,
     @repository("BotRepository") protected botRepository: BotRepository,
     @repository("MatchRepository") protected matchRepository: MatchRepository,
@@ -51,12 +49,12 @@ export class MatchService {
 
   sse = new EventEmitter();
 
-  async startMatch(executor: Executor, match: Match) {
+  async startMatch(match: Match) {
     let serverConfig: { runCommand: string; programPath: string; buildLog: string | undefined };
     let game;
     try {
-      game = await this.gameRepository.findById(executor, match.gameId);
-      serverConfig = await this.prepareGameServer(executor, game);
+      game = await this.gameRepository.findById(match.gameId);
+      serverConfig = await this.prepareGameServer(game);
       this.logMatchRunEvent(match, MatchRunStage.PREPARE_GAME_SERVER_DONE).catch((e) =>
         console.error(e),
       );
@@ -68,7 +66,7 @@ export class MatchService {
     const botConfigs = [];
     try {
       for (const botId of match.botIds) {
-        botConfigs.push(await this.prepareBot(executor, botId));
+        botConfigs.push(await this.prepareBot(botId));
       }
       this.logMatchRunEvent(match, MatchRunStage.PREPARE_BOTS_DONE).catch((e) => console.error(e));
     } catch (error: unknown) {
@@ -99,7 +97,7 @@ export class MatchService {
       );
       await exec(serverRunCommand, { cwd: matchPath });
       const logFileName = "match.log";
-      await this.matchRepository._systemAccess.updateById(match.id, {
+      await this.matchRepository.updateById(match.id, {
         log: {
           file: await fsp.readFile(path.join(matchPath, logFileName)),
           fileName: logFileName,
@@ -124,7 +122,7 @@ export class MatchService {
         : event instanceof Error || this.isErrorWithMessage(event)
         ? event.message
         : "Unknown error";
-    await this.matchRepository._systemAccess.updateById(match.id, {
+    await this.matchRepository.updateById(match.id, {
       runStatus: {
         stage,
         ...(message && { log: (match.runStatus?.log ?? "") + message + "\n" }),
@@ -132,24 +130,24 @@ export class MatchService {
     });
   }
 
-  async prepareGameServer(executor: Executor, game: Game) {
+  async prepareGameServer(game: Game) {
     const serverBuildPath = path.join(MatchService.getGamePath(game.id), "server", "build");
     return this.prepareProgram(serverBuildPath, game.server, "server");
   }
 
-  async prepareBot(executor: Executor, botId: string) {
-    const bot = await this.botRepository.findById(executor, botId);
+  async prepareBot(botId: string) {
+    const bot = await this.botRepository.findById(botId);
     const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
     const { runCommand, programPath } = await this.prepareProgram(botBuildPath, bot.source, "bot");
     return { runCommand, programPath };
   }
 
-  async checkBot(executor: Executor, botId: string) {
-    const bot = await this.botRepository.findById(executor, botId);
+  async checkBot(botId: string) {
+    const bot = await this.botRepository.findById(botId);
     try {
       const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
       const { buildLog } = await this.prepareProgram(botBuildPath, bot.source, "bot");
-      await this.botRepository._systemAccess.updateById(botId, {
+      await this.botRepository.updateById(botId, {
         submitStatus: {
           stage: BotSubmitStage.CHECK_SUCCESS,
           log: (bot.submitStatus?.log ?? "") + buildLog,
@@ -157,7 +155,7 @@ export class MatchService {
       });
     } catch (error: unknown) {
       const message = this.isErrorWithMessage(error) ? error.message : "Unknown error";
-      await this.botRepository._systemAccess.updateById(botId, {
+      await this.botRepository.updateById(botId, {
         submitStatus: {
           stage: BotSubmitStage.CHECK_ERROR,
           log: (bot.submitStatus?.log ?? "") + message,
@@ -214,8 +212,8 @@ export class MatchService {
     return !!error && typeof (error as { message: string }).message === "string";
   }
 
-  async deleteMatch(executor: Executor, matchId: string) {
-    await this.matchRepository.deleteMatch(executor, matchId);
+  async deleteMatch(matchId: string) {
+    await this.matchRepository.deleteById(matchId);
     await fsp.rm(MatchService.getMatchPath(matchId), { recursive: true, force: true });
   }
 }

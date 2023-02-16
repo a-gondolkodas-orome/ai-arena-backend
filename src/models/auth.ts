@@ -74,16 +74,16 @@ export class RegistrationSuccess {
   @field()
   token: string;
 
-  @field((type) => User)
+  @field(() => User)
   user: User;
 }
 
 @objectType()
 export class RegistrationFieldErrors {
-  @field((type) => [String!], { nullable: true })
+  @field(() => [String!], { nullable: true })
   username?: string[];
 
-  @field((type) => [String!], { nullable: true })
+  @field(() => [String!], { nullable: true })
   email?: string[];
 }
 
@@ -92,7 +92,7 @@ export class RegistrationError extends GraphqlError {
   @field({ nullable: true })
   fieldErrors?: RegistrationFieldErrors;
 
-  @field((type) => [String!], { nullable: true })
+  @field(() => [String!], { nullable: true })
   nonFieldErrors?: string[];
 }
 

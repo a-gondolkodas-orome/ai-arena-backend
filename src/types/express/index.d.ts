@@ -1,9 +1,9 @@
-import { Executor } from "../../authorization";
+import { Actor } from "../../authorization";
 
 declare global {
   namespace Express {
     export interface Request {
-      executor: Executor;
+      actor: Actor;
     }
   }
 }

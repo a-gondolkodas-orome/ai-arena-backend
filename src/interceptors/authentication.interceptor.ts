@@ -20,7 +20,7 @@ export class AuthenticationInterceptor extends ExpressMiddlewareInterceptorProvi
   }
 
   protected authMiddleware: ExpressRequestHandler = async (request, response, next) => {
-    request.executor = await authenticateRequest(this.authStrategy, this.userRepository, request);
+    request.actor = await authenticateRequest(this.authStrategy, this.userRepository, request);
     next();
   };
 }

@@ -1,99 +1,59 @@
-import { inject } from "@loopback/core";
-import { DefaultCrudRepository, repository } from "@loopback/repository";
+import { Getter, inject } from "@loopback/core";
+import {
+  BelongsToAccessor,
+  DefaultCrudRepository,
+  ReferencesManyAccessor,
+  repository,
+} from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
-import { Filter } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
-import { AccessLevel, authorize, Executor } from "../authorization";
-import { Contest, ContestInput, ContestStatus } from "../models/contest";
-import { assertValue, convertObjectIdsToString } from "../utils";
+import { Contest, ContestInput, ContestRelations, ContestStatus } from "../models/contest";
+import { convertObjectIdsToString } from "../utils";
 import { GameRepository } from "./game.repository";
 import { ValidationError } from "../errors";
+import { Game } from "../models/game";
+import { User } from "../models/user";
+import { UserRepository } from "./user.repository";
+import { Bot } from "../models/bot";
+import { BotRepository } from "./bot.repository";
+import { MatchRepository } from "./match.repository";
+import { Match } from "../models/match";
 
-export class ContestRepository {
+export class ContestRepository extends DefaultCrudRepository<
+  Contest,
+  typeof Contest.prototype.id,
+  ContestRelations
+> {
   constructor(
     @inject("datasources.mongo") dataSource: MongoDataSource,
-    @repository("GameRepository") readonly gameRepository: GameRepository,
+    @repository.getter("GameRepository") readonly getGameRepository: Getter<GameRepository>,
+    @repository.getter("UserRepository") readonly getUserRepository: Getter<UserRepository>,
+    @repository.getter("BotRepository") readonly getBotRepository: Getter<BotRepository>,
+    @repository.getter("MatchRepository") readonly getMatchRepository: Getter<MatchRepository>,
   ) {
-    this.repo = new DefaultCrudRepository(Contest, dataSource);
+    super(Contest, dataSource);
+    this.game = this.createBelongsToAccessorFor("game", getGameRepository);
+    this.registerInclusionResolver("game", this.game.inclusionResolver);
+    this.owner = this.createBelongsToAccessorFor("owner", getUserRepository);
+    this.registerInclusionResolver("owner", this.owner.inclusionResolver);
+    this.bots = this.createReferencesManyAccessorFor("bots", getBotRepository);
+    this.registerInclusionResolver("bots", this.bots.inclusionResolver);
+    this.matches = this.createReferencesManyAccessorFor("matches", getMatchRepository);
+    this.registerInclusionResolver("matches", this.matches.inclusionResolver);
   }
 
-  protected repo: DefaultCrudRepository<Contest, typeof Contest.prototype.id, {}>;
+  readonly game: BelongsToAccessor<Game, typeof Contest.prototype.id>;
+  readonly owner: BelongsToAccessor<User, typeof Contest.prototype.id>;
+  readonly bots: ReferencesManyAccessor<Bot, typeof Contest.prototype.id>;
+  readonly matches: ReferencesManyAccessor<Match, typeof Contest.prototype.id>;
 
-  get _systemAccess() {
-    return this.repo;
-  }
-
-  async find(executor: Executor, filter?: Filter<Contest>, options?: Options) {
-    authorize(AccessLevel.USER, executor);
-    return this.repo.find(filter, options);
-  }
-
-  // async findById(executor: Executor, botId: string) {
-  //   const bot = convertObjectIdsToString(await this.repo.findById(botId));
-  //   authorize(AccessLevel.OWNER, executor, bot.userId);
-  //   return bot;
-  // }
-  //
-  // async findOne(executor: Executor, filter?: Filter<Bot>, options?: Options) {
-  //   authorize(AccessLevel.ADMIN, executor);
-  //   const bot = await this.repo.findOne(filter, options);
-  //   return bot ? convertObjectIdsToString(bot) : bot;
-  // }
-  //
-  async create(executor: Executor, contest: ContestInput, options?: Options) {
-    authorize(AccessLevel.ADMIN, executor);
-    assertValue(executor);
-    await this.validateCreate(contest);
-    return convertObjectIdsToString(
-      await this.repo.create(
-        {
-          ...contest,
-          ownerId: executor.id,
-          botIds: [],
-          matchIds: [],
-          status: ContestStatus.OPEN,
-        },
-        options,
-      ),
-    );
-  }
-  //
-  // async update(
-  //   executor: Executor,
-  //   botUpdate: Partial<Pick<Bot, "name" | "source" | "versionNumber" | "submitStatus">> &
-  //     Pick<Bot, "id">,
-  //   options?: Options,
-  // ) {
-  //   let bot;
-  //   try {
-  //     bot = convertObjectIdsToString(await this.repo.findById(botUpdate.id));
-  //   } catch (error) {
-  //     throw new AuthorizationError({});
-  //   }
-  //   authorize(AccessLevel.OWNER, executor, bot.userId);
-  //   await this.repo.updateById(botUpdate.id, botUpdate, options);
-  // }
-  //
-  // async deleteBot(executor: Executor, botId: string, options?: Options) {
-  //   let bot;
-  //   try {
-  //     bot = convertObjectIdsToString(await this.repo.findById(botId));
-  //   } catch (error) {
-  //     throw new AuthorizationError({});
-  //   }
-  //   authorize(AccessLevel.OWNER, executor, bot.userId);
-  //   await this.repo.deleteById(botId, options);
-  // }
-  //
-  protected async validateCreate(contest: ContestInput) {
+  async validateAndCreate(actor: User, contest: ContestInput, options?: Options) {
     const gameIdErrors = [];
-    if (!(await this.gameRepository._systemAccess.exists(contest.gameId)))
+    if (!(await (await this.getGameRepository()).exists(contest.gameId)))
       gameIdErrors.push("Game not found.");
     const nameErrors = [];
     if (contest.name.length === 0) nameErrors.push("Contest name must not be empty");
-    const contestCount = await this.repo.count({
-      name: contest.name,
-    });
+    const contestCount = await this.count({ name: contest.name });
     if (contestCount.count > 0) nameErrors.push("A contest with this name already exists");
     const dateErrors = [];
     try {
@@ -110,5 +70,18 @@ export class ContestRepository {
         },
       });
     }
+
+    return convertObjectIdsToString(
+      await this.create(
+        {
+          ...contest,
+          ownerId: actor.id,
+          botIds: [],
+          matchIds: [],
+          status: ContestStatus.OPEN,
+        },
+        options,
+      ),
+    );
   }
 }
