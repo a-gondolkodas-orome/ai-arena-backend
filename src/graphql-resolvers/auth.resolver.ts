@@ -9,9 +9,7 @@ import {
   RegistrationInput,
   handleAuthErrors,
 } from "../models/auth";
-import { TokenServiceBindings } from "@loopback/authentication-jwt";
-import { TokenService } from "@loopback/authentication";
-import { UserService } from "../services";
+import { JwtService, UserService } from "../services";
 import { SecurityBindings, UserProfile } from "@loopback/security";
 import { AuthenticationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
@@ -23,7 +21,7 @@ import { notNull } from "../utils";
 @resolver()
 export class AuthResolver extends BaseResolver<Actor> {
   constructor(
-    @inject(TokenServiceBindings.TOKEN_SERVICE) public jwtService: TokenService,
+    @service() public jwtService: JwtService,
     @service() public userService: UserService,
     @service() protected authorizationService: AuthorizationService,
     @inject(SecurityBindings.USER, { optional: true }) public user: UserProfile,

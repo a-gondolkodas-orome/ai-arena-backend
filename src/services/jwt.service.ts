@@ -11,7 +11,7 @@ const signAsync = promisify<string | Buffer | object, Secret, SignOptions | unde
 );
 const verifyAsync = promisify<string, Secret, VerifyOptions | undefined, Jwt>(verify);
 
-@injectable({ scope: BindingScope.TRANSIENT })
+@injectable({ scope: BindingScope.SINGLETON })
 export class JwtService extends JWTService {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SECRET)

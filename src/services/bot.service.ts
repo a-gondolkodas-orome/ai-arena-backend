@@ -2,16 +2,17 @@ import { injectable, BindingScope, service } from "@loopback/core";
 import { Bot } from "../models/bot";
 import { JwtService } from "./jwt.service";
 import * as t from "io-ts";
-import { BotController } from "../controllers";
 import { repository } from "@loopback/repository";
 import { BotRepository } from "../repositories";
 import { AuthorizationError } from "../errors";
 import fsp from "fs/promises";
-import { MatchService } from "./match.service";
 import EventEmitter from "events";
+import path from "path";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class BotService {
+  static readonly ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE = "/bot-source";
+
   static readonly botSourceUploadTokenCodec = t.type(
     {
       userId: t.string,
@@ -19,6 +20,10 @@ export class BotService {
     },
     "botSourceUploadTokenCodec",
   );
+
+  static getBotPath(botId: string) {
+    return path.resolve("container", "bots", botId);
+  }
 
   constructor(
     @repository("BotRepository") protected botRepository: BotRepository,
@@ -38,7 +43,7 @@ export class BotService {
       },
       { expiresIn: "5m" },
     );
-    return `${BotController.ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE}/${token}`;
+    return `${BotService.ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE}/${token}`;
   }
 
   async verifyBotSourceUploadToken(token: string) {
@@ -63,7 +68,7 @@ export class BotService {
 
   async deleteBot(botId: string) {
     await this.botRepository.deleteById(botId);
-    await fsp.rm(MatchService.getBotPath(botId), { recursive: true, force: true });
+    await fsp.rm(BotService.getBotPath(botId), { recursive: true, force: true });
   }
 
   sse = new EventEmitter();

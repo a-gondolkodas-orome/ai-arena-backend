@@ -32,10 +32,6 @@ export class MatchService {
     return path.resolve("container", "games", gameId);
   }
 
-  static getBotPath(botId: string) {
-    return path.resolve("container", "bots", botId);
-  }
-
   static getMatchPath(matchId: string) {
     return path.resolve("container", "matches", matchId);
   }
@@ -137,7 +133,7 @@ export class MatchService {
 
   async prepareBot(botId: string) {
     const bot = await this.botRepository.findById(botId);
-    const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
+    const botBuildPath = path.join(BotService.getBotPath(botId), "build");
     const { runCommand, programPath } = await this.prepareProgram(botBuildPath, bot.source, "bot");
     return { runCommand, programPath };
   }
@@ -145,7 +141,7 @@ export class MatchService {
   async checkBot(botId: string) {
     const bot = await this.botRepository.findById(botId);
     try {
-      const botBuildPath = path.join(MatchService.getBotPath(botId), "build");
+      const botBuildPath = path.join(BotService.getBotPath(botId), "build");
       const { buildLog } = await this.prepareProgram(botBuildPath, bot.source, "bot");
       await this.botRepository.updateById(botId, {
         submitStatus: {

@@ -21,7 +21,6 @@ const multerInterceptor = toInterceptor(
 );
 
 export class BotController {
-  static readonly ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE = "/bot-source";
   static readonly SOURCE_FILE_MAX_SIZE = 1000000;
 
   constructor(
@@ -32,7 +31,7 @@ export class BotController {
     @inject(RestBindings.Http.RESPONSE) protected response: Response,
   ) {}
 
-  @post(`${BotController.ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE}/{token}`, {
+  @post(`${BotService.ENDPOINT_PREFIX__UPLOAD_BOT_SOURCE}/{token}`, {
     parameters: [{ name: "token", schema: { type: "string" }, in: "path" }],
     responses: {
       "201": {

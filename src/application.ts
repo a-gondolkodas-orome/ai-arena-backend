@@ -1,5 +1,5 @@
 import { BootMixin } from "@loopback/boot";
-import { ApplicationConfig } from "@loopback/core";
+import { ApplicationConfig, CoreTags } from "@loopback/core";
 import { RestExplorerBindings, RestExplorerComponent } from "@loopback/rest-explorer";
 import { RestApplication } from "@loopback/rest";
 import path from "path";
@@ -13,11 +13,11 @@ import {
   TokenServiceBindings,
 } from "@loopback/authentication-jwt";
 import { MongoDataSource } from "./datasources";
-import { JwtService } from "./services";
 import { UserRepository } from "./repositories";
 import { AiArenaBindings } from "./keys";
 import { GraphqlAuthenticationProvider } from "./authentication/graphql-authentication.provider";
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
+import { JwtService } from "./services";
 
 export { ApplicationConfig };
 
@@ -31,7 +31,9 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     this.dataSource(MongoDataSource, UserServiceBindings.DATASOURCE_NAME);
     this.bind(AiArenaBindings.AUTH_STRATEGY).toClass(JWTAuthenticationStrategy);
     this.bind(UserServiceBindings.USER_REPOSITORY).toClass(UserRepository);
-    this.bind(TokenServiceBindings.TOKEN_SERVICE).toInjectable(JwtService);
+    this.bind(TokenServiceBindings.TOKEN_SERVICE).toAlias(
+      `${CoreTags.SERVICE}s.${JwtService.name}`,
+    );
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware("middleware.express.GraphQL", server.expressApp);
     this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlAuthenticationProvider);
