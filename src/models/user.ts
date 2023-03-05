@@ -51,11 +51,7 @@ export class User extends Entity {
     authorizationService: AuthorizationService,
     userRepository: UserRepository,
   ) {
-    const user = await userRepository.findOne({
-      where: { id },
-    });
-    if (user) await authorizationService.authorize(actor, Action.READ, user);
-    return user;
+    return userRepository.findOne({ where: { id } });
   }
 
   static async login(credentials: Credentials, userService: UserService, jwtService: TokenService) {

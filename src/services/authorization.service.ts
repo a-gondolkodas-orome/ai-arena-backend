@@ -24,6 +24,7 @@ export enum Action {
   UPDATE = "UPDATE",
   DELETE = "DELETE",
   CONTEST_REGISTER = "CONTEST_REGISTER",
+  CONTEST_UNREGISTER = "CONTEST_UNREGISTER",
 }
 
 export type ResourceObject = User | Game | Bot | Match | Contest;
@@ -66,19 +67,21 @@ export class AuthorizationService {
     action: Action,
     object: T | CreateResourceObject | ResourceCollection | null,
     field?: keyof ResourceObjectWithRelations<T>,
+    value?: unknown,
   ) {
     if (action === Action.CREATE && object instanceof RegistrationInput) return;
-    if (this.checkRoleBasedAccess(actor, action, object, field)) return;
+    if (await this.checkRoleBasedAccess(actor, action, object, field, value)) return;
     if (await this.checkRelationshipBasedAccess(actor, action, object, field)) return;
     if (!actor) throw new AuthenticationError({});
     throw new AuthorizationError({});
   }
 
-  protected checkRoleBasedAccess<T extends ResourceObject>(
+  protected async checkRoleBasedAccess<T extends ResourceObject>(
     actor: Actor,
     action: Action,
     object: T | CreateResourceObject | ResourceCollection | null,
     field?: keyof ResourceObjectWithRelations<T>,
+    value?: unknown,
   ) {
     if (!actor) return false;
     for (const role of actor.roles)
@@ -90,6 +93,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "username") return true;
           }
+          if (action === Action.READ && object === ResourceCollection.GAMES) return true;
           if (object instanceof Game) {
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "name") return true;
@@ -106,6 +110,8 @@ export class AuthorizationService {
             if (action === Action.READ && field === "game") return true;
             if (action === Action.READ && field === "name") return true;
           }
+          if (action === Action.READ && object === ResourceCollection.MATCHES) return true;
+          if (action === Action.READ && object === ResourceCollection.CONTESTS) return true;
           if (object instanceof Contest) {
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "game") return true;
@@ -114,6 +120,13 @@ export class AuthorizationService {
             if (action === Action.READ && field === "date") return true;
             if (action === Action.READ && field === "bots") return true;
             if (action === Action.READ && field === "status") return true;
+            if (
+              action === Action.CONTEST_REGISTER &&
+              value instanceof Bot &&
+              (await this.canUseBots(actor, [value.id]))
+            )
+              return true;
+            if (action === Action.CONTEST_UNREGISTER) return true;
           }
         }
       }
@@ -132,6 +145,7 @@ export class AuthorizationService {
     if (object instanceof User && actor.id === object.id) {
       if (action === Action.READ && field === "email") return true;
       if (action === Action.UPDATE && field === "email") return true;
+      if (action === Action.READ && field === "roles") return true;
       if (action === Action.DELETE) return true;
     }
     if (object instanceof Bot && actor.id === object.userId) {
@@ -140,10 +154,12 @@ export class AuthorizationService {
       if (action === Action.UPDATE && field === "source") return true;
       if (action === Action.DELETE) return true;
     }
-    if (action === Action.CREATE && object instanceof MatchInput) {
-      const bots = await this.botRepository.find({ where: { id: { inq: object.botIds } } });
-      if (bots.every((bot) => bot.userId === actor.id)) return true; // TODO handle system bots
-    }
+    if (
+      action === Action.CREATE &&
+      object instanceof MatchInput &&
+      (await this.canUseBots(actor, object.botIds))
+    )
+      return true;
     if (object instanceof Match) {
       const bots = await this.botRepository.find({ where: { id: { inq: object.botIds } } });
       const isParticipant = bots.some((bot) => bot.userId === actor.id);
@@ -165,5 +181,10 @@ export class AuthorizationService {
       if (registeredBots.length) return true;
     }
     return false;
+  }
+
+  protected async canUseBots(actor: User, botIds: string[]) {
+    const bots = await this.botRepository.find({ where: { id: { inq: botIds } } });
+    return bots.length === botIds.length && bots.every((bot) => bot.userId === actor.id); // TODO handle system bots
   }
 }

@@ -82,11 +82,7 @@ export class Match extends Entity {
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
   ) {
-    const match = await matchRepository.findOne({
-      where: { id },
-    });
-    if (match) await authorizationService.authorize(actor, Action.READ, match);
-    return match;
+    return matchRepository.findOne({ where: { id } });
   }
 
   static async delete(

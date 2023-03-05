@@ -18,10 +18,15 @@ import {
   ContestInput,
   ContestResponse,
   ContestsResponse,
+  ContestStatus,
   CreateContestResponse,
+  ContestRegistration,
+  RegisterToContestResponse,
+  UnregisterFromContestResponse,
+  UpdateContestStatusResponse,
 } from "../models/contest";
 import { ContestRepository } from "../repositories/contest.repository";
-import { ValidationError, validationErrorCodec } from "../errors";
+import { AuthorizationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { Game } from "../models/game";
 import { Bot } from "../models/bot";
@@ -95,6 +100,98 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     });
   }
 
+  @mutation(() => RegisterToContestResponse)
+  async registerToContest(@arg("registration") registration: ContestRegistration) {
+    return handleAuthErrors(async () => {
+      try {
+        return Object.assign(
+          await Contest.register(
+            this.actor,
+            registration.contestId,
+            registration.botId,
+            this.authorizationService,
+            this.contestRepository,
+            this.botRepository,
+          ),
+          { __typename: "Contest" },
+        );
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            __typename: "RegisterToContestError",
+            message: error.data.message,
+            fieldErrors: (error.data as t.TypeOf<typeof validationErrorCodec>).fieldErrors,
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
+  @mutation(() => UnregisterFromContestResponse)
+  async unregisterFromContest(@arg("contestId") contestId: string) {
+    return handleAuthErrors(async () => {
+      try {
+        return Object.assign(
+          await Contest.unregister(
+            this.actor,
+            contestId,
+            this.authorizationService,
+            this.contestRepository,
+          ),
+          { __typename: "Contest" },
+        );
+      } catch (error) {
+        if (
+          error instanceof ValidationError &&
+          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
+        ) {
+          return {
+            __typename: "ContestNotFoundError",
+            message:
+              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
+              "Contest not found.",
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
+  @mutation(() => UpdateContestStatusResponse)
+  async updateStatus(
+    @arg("contestId") contestId: string,
+    @arg("status", () => ContestStatus) status: ContestStatus,
+  ) {
+    return handleAuthErrors(async () => {
+      try {
+        const result = await Contest.updateStatus(
+          this.actor,
+          contestId,
+          status,
+          this.authorizationService,
+          this.contestRepository,
+        );
+        return result instanceof Contest
+          ? Object.assign(result, { __typename: "Contest" })
+          : { __typename: "UpdateContestStatusError", ...result };
+      } catch (error) {
+        if (
+          error instanceof ValidationError &&
+          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
+        ) {
+          return {
+            __typename: "ContestNotFoundError",
+            message:
+              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
+              "Contest not found.",
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
   @fieldResolver()
   async id(@root() contest: Contest) {
     return contest.getIdAuthorized(this.actor, this.authorizationService);
@@ -125,16 +222,21 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return contest.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
   }
 
-  @fieldResolver(() => [Match])
+  @fieldResolver(() => [Match], { nullable: true })
   async matches(@root() contest: Contest) {
-    return contest.getMatchesAuthorized(
-      this.actor,
-      this.authorizationService,
-      this.matchRepository,
-    );
+    try {
+      return await contest.getMatchesAuthorized(
+        this.actor,
+        this.authorizationService,
+        this.matchRepository,
+      );
+    } catch (error) {
+      if (error instanceof AuthorizationError) return null;
+      throw error;
+    }
   }
 
-  @fieldResolver()
+  @fieldResolver(() => ContestStatus)
   async status(@root() contest: Contest) {
     return contest.getStatusAuthorized(this.actor, this.authorizationService);
   }

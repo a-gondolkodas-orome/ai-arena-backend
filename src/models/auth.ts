@@ -1,5 +1,4 @@
 import { ClassType, field, inputType, InterfaceType, objectType } from "@loopback/graphql";
-import { User } from "./user";
 import { createUnionType } from "type-graphql";
 import { AuthenticationError, AuthorizationError } from "../errors";
 import { GqlValue } from "../utils";
@@ -74,8 +73,8 @@ export class RegistrationSuccess {
   @field()
   token: string;
 
-  @field(() => User)
-  user: User;
+  @field()
+  userId: string;
 }
 
 @objectType()
@@ -99,13 +98,12 @@ export class RegistrationError extends GraphqlError {
 export const RegistrationResponse = createAuthErrorUnionType(
   "RegistrationResponse",
   [RegistrationSuccess, RegistrationError],
-  (value: unknown) => {
-    if (typeof value === "object" && value) {
-      if ("token" in value && "user" in value) return RegistrationSuccess;
-      if ("fieldErrors" in value || "nonFieldErrors" in value) return RegistrationError;
-    }
-    return undefined;
-  },
+  (value: unknown) =>
+    (value as GqlValue).__typename === "RegistrationSuccess"
+      ? RegistrationSuccess
+      : (value as GqlValue).__typename === "RegistrationError"
+      ? RegistrationError
+      : undefined,
 );
 
 @inputType()
@@ -126,9 +124,8 @@ export class LoginSuccess {
 export const LoginResponse = createAuthErrorUnionType(
   "LoginResponse",
   [LoginSuccess],
-  (value: unknown) => {
-    return typeof value === "object" && value && "token" in value ? LoginSuccess : undefined;
-  },
+  (value: unknown) =>
+    (value as GqlValue).__typename === "LoginSuccess" ? LoginSuccess : undefined,
 );
 
 export const AuthError = createUnionType({

@@ -2,14 +2,7 @@ import * as t from "io-ts";
 import { ApolloError } from "apollo-server-errors";
 import { registerEnumType } from "type-graphql";
 import { enumCodec } from "./codec";
-
-export enum ErrorType {
-  VALIDATION_ERROR = "VALIDATION_ERROR",
-  ASSERT_EXCEPTION = "ASSERT_EXCEPTION",
-  USER_EXCEPTION = "USER_EXCEPTION",
-  AUTHENTICATION_ERROR = "AUTHENTICATION_ERROR",
-  AUTHORIZATION_ERROR = "AUTHORIZATION_ERROR",
-}
+import { ErrorType } from "./common";
 
 registerEnumType(ErrorType, { name: "ErrorType" });
 
@@ -70,10 +63,21 @@ export const aiArenaExceptionCodec = t.intersection([
 
 export class AiArenaException extends ApolloError {
   statusCode: HttpStatusCode;
+  codes: Set<string> | undefined;
 
   constructor(public data: t.TypeOf<typeof aiArenaExceptionCodec>) {
     super(JSON.stringify(data), data.type, data);
     this.statusCode = data.statusCode;
+  }
+
+  withCode(exceptionCode: string) {
+    if (!this.codes) this.codes = new Set();
+    this.codes.add(exceptionCode);
+    return this;
+  }
+
+  hasCode(exceptionCode: string) {
+    return !!this.codes?.has(exceptionCode);
   }
 }
 

@@ -9,6 +9,7 @@ import { ValidationError } from "../errors";
 import { User } from "../models/user";
 import { UserRepository } from "./user.repository";
 import { Game } from "../models/game";
+import { Filter, FilterExcludingWhere } from "@loopback/filter";
 
 export class BotRepository extends DefaultCrudRepository<
   Bot,
@@ -62,5 +63,22 @@ export class BotRepository extends DefaultCrudRepository<
         options,
       ),
     );
+  }
+
+  override async find(filter?: Filter<Bot>, options?: Options) {
+    return (await super.find(filter, options)).map((bot) => convertObjectIdsToString(bot));
+  }
+
+  override async findOne(filter?: Filter<Bot>, options?: Options) {
+    const bot = await super.findOne(filter, options);
+    return bot ? convertObjectIdsToString(bot) : null;
+  }
+
+  override async findById(
+    id: typeof Bot.prototype.id,
+    filter?: FilterExcludingWhere<Bot>,
+    options?: Options,
+  ) {
+    return convertObjectIdsToString(await super.findById(id, filter, options));
   }
 }

@@ -71,11 +71,7 @@ export class Bot extends Entity {
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
   ) {
-    const bot = await botRepository.findOne({
-      where: { id },
-    });
-    if (bot) await authorizationService.authorize(actor, Action.READ, bot);
-    return bot;
+    return botRepository.findOne({ where: { id } });
   }
 
   static async delete(

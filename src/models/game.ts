@@ -43,11 +43,7 @@ export class Game extends Entity {
     authorizationService: AuthorizationService,
     gameRepository: GameRepository,
   ) {
-    const game = await gameRepository.findOne({
-      where: { id },
-    });
-    if (game) await authorizationService.authorize(actor, Action.READ, game);
-    return game;
+    return gameRepository.findOne({ where: { id } });
   }
 
   @field(() => ID)

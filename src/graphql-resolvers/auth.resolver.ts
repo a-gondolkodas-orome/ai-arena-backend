@@ -37,7 +37,7 @@ export class AuthResolver extends BaseResolver<Actor> {
   ): Promise<typeof RegistrationResponse> {
     return handleAuthErrors(async () => {
       try {
-        return await User.create(
+        const { user, token } = await User.create(
           this.actor,
           registrationData,
           this.authorizationService,
@@ -45,9 +45,11 @@ export class AuthResolver extends BaseResolver<Actor> {
           this.userService,
           this.jwtService,
         );
+        return { __typename: "RegistrationSuccess", userId: user.id, token };
       } catch (error) {
         if (error instanceof ValidationError) {
           return {
+            __typename: "RegistrationError",
             type: error.data.type,
             message: error.data.message,
             ...(error.data as t.TypeOf<typeof validationErrorCodec>),
@@ -61,7 +63,9 @@ export class AuthResolver extends BaseResolver<Actor> {
   @query(() => LoginResponse)
   async login(@arg("credentials") credentials: Credentials): Promise<typeof LoginResponse> {
     return handleAuthErrors(async () => {
-      return User.login(credentials, this.userService, this.jwtService);
+      return Object.assign(await User.login(credentials, this.userService, this.jwtService), {
+        __typename: "LoginSuccess",
+      });
     });
   }
 
