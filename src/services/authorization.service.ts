@@ -25,6 +25,7 @@ export enum Action {
   DELETE = "DELETE",
   CONTEST_REGISTER = "CONTEST_REGISTER",
   CONTEST_UNREGISTER = "CONTEST_UNREGISTER",
+  CONTEST_START = "CONTEST_START",
 }
 
 export type ResourceObject = User | Game | Bot | Match | Contest;

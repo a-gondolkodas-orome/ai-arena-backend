@@ -45,7 +45,7 @@ export class MatchService {
 
   sse = new EventEmitter();
 
-  async startMatch(match: Match) {
+  async runMatch(match: Match) {
     let serverConfig: { runCommand: string; programPath: string; buildLog: string | undefined };
     let game;
     try {

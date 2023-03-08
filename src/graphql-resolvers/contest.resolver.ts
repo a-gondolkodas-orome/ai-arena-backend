@@ -24,8 +24,9 @@ import {
   RegisterToContestResponse,
   UnregisterFromContestResponse,
   UpdateContestStatusResponse,
+  StartContestResponse,
 } from "../models/contest";
-import { ContestRepository } from "../repositories/contest.repository";
+import { ContestRepository } from "../repositories";
 import { AuthorizationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { Game } from "../models/game";
@@ -34,11 +35,13 @@ import { User } from "../models/user";
 import { Match } from "../models/match";
 import { AuthorizationService } from "../services/authorization.service";
 import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
+import { ContestService } from "../services/contest.service";
 
 @resolver(() => Contest)
 export class ContestResolver extends BaseResolver implements ResolverInterface<Contest> {
   constructor(
     @service() protected authorizationService: AuthorizationService,
+    @service() protected contestService: ContestService,
     @repository(BotRepository) protected botRepository: BotRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(GameRepository) protected gameRepository: GameRepository,
@@ -174,7 +177,46 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
         );
         return result instanceof Contest
           ? Object.assign(result, { __typename: "Contest" })
-          : { __typename: "UpdateContestStatusError", ...result };
+          : {
+              __typename: "UpdateContestStatusError",
+              message: "Invalid contest status update.",
+              ...result,
+            };
+      } catch (error) {
+        if (
+          error instanceof ValidationError &&
+          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
+        ) {
+          return {
+            __typename: "ContestNotFoundError",
+            message:
+              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
+              "Contest not found.",
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
+  @mutation(() => StartContestResponse)
+  async startContest(@arg("contestId") contestId: string) {
+    return handleAuthErrors(async () => {
+      try {
+        const result = await Contest.start(
+          this.actor,
+          contestId,
+          this.authorizationService,
+          this.contestService,
+          this.contestRepository,
+        );
+        if (result instanceof Contest) return Object.assign(result, { __typename: "Contest" });
+        else
+          return {
+            __typename: "StartContestError",
+            message: "Can't start contest in current status.",
+            ...result,
+          };
       } catch (error) {
         if (
           error instanceof ValidationError &&

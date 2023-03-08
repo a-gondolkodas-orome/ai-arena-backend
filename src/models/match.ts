@@ -7,14 +7,8 @@ import { GqlValue } from "../utils";
 import { Bot, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
-import {
-  Action,
-  Actor,
-  AuthorizationService,
-  ResourceCollection,
-} from "../services/authorization.service";
+import { Action, Actor, AuthorizationService, MatchService, ResourceCollection } from "../services";
 import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
-import { MatchService } from "../services";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -60,7 +54,7 @@ export class Match extends Entity {
   ) {
     await authorizationService.authorize(actor, Action.CREATE, matchInput);
     const match = await matchRepository.validateAndCreate(actor, matchInput);
-    matchService.startMatch(match).catch((e) => console.error(e)); // TODO improve logging
+    matchService.runMatch(match).catch((e) => console.error(e)); // TODO improve logging
     return match;
   }
 

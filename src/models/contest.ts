@@ -12,10 +12,16 @@ import {
   Action,
   Actor,
   AuthorizationService,
+  ContestService,
   ResourceCollection,
-} from "../services/authorization.service";
-import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
-import { ContestRepository } from "../repositories/contest.repository";
+} from "../services";
+import {
+  BotRepository,
+  ContestRepository,
+  GameRepository,
+  MatchRepository,
+  UserRepository,
+} from "../repositories";
 import { AssertException, ValidationError } from "../errors";
 
 export enum ContestStatus {
@@ -144,6 +150,30 @@ export class Contest extends Entity {
       return contest;
     } else {
       return { from: contest.status, to: status };
+    }
+  }
+
+  static async start(
+    actor: User,
+    contestId: string,
+    authorizationService: AuthorizationService,
+    contestService: ContestService,
+    contestRepository: ContestRepository,
+  ) {
+    const contest = await contestRepository.findOne({ where: { id: contestId } });
+    if (!contest) {
+      throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
+        this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
+      );
+    }
+    await authorizationService.authorize(actor, Action.CONTEST_START, contest);
+    if (contest.status === ContestStatus.OPEN || contest.status === ContestStatus.CLOSED) {
+      contest.status = ContestStatus.RUNNING;
+      await contestRepository.update(contest);
+      contestService.runContest(contest).catch((error) => console.error(error));
+      return contest;
+    } else {
+      return { from: contest.status };
     }
   }
 
@@ -363,9 +393,9 @@ export const UnregisterFromContestResponse = createAuthErrorUnionType(
 
 @objectType({ implements: GraphqlError })
 export class UpdateContestStatusError extends GraphqlError {
-  @field()
+  @field(() => ContestStatus)
   from: ContestStatus;
-  @field()
+  @field(() => ContestStatus)
   to: ContestStatus;
 }
 
@@ -379,5 +409,24 @@ export const UpdateContestStatusResponse = createAuthErrorUnionType(
       ? ContestNotFoundError
       : (value as GqlValue).__typename === "UpdateContestStatusError"
       ? UpdateContestStatusError
+      : undefined,
+);
+
+@objectType({ implements: GraphqlError })
+export class StartContestError extends GraphqlError {
+  @field(() => ContestStatus)
+  status: ContestStatus;
+}
+
+export const StartContestResponse = createAuthErrorUnionType(
+  "StartContestResponse",
+  [Contest, ContestNotFoundError, StartContestError],
+  (value: unknown) =>
+    (value as GqlValue).__typename === "Contest"
+      ? Contest
+      : (value as GqlValue).__typename === "ContestNotFoundError"
+      ? ContestNotFoundError
+      : (value as GqlValue).__typename === "StartContestError"
+      ? StartContestError
       : undefined,
 );
