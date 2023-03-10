@@ -6,9 +6,9 @@ import { repository } from "@loopback/repository";
 import { AuthenticationError, AuthorizationError } from "../errors";
 import { Contest, ContestInput, ContestWithRelations } from "../models/contest";
 import { Game, GameInput, GameWithRelations } from "../models/game";
-import { BotRepository } from "../repositories";
 import { BindingScope, injectable } from "@loopback/core";
 import { UserWithRelations } from "@loopback/authentication-jwt";
+import { BotRepository } from "../repositories/bot.repository";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
 

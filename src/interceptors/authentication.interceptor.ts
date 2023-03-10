@@ -2,10 +2,10 @@ import { inject, globalInterceptor, Interceptor } from "@loopback/core";
 import { AiArenaBindings } from "../keys";
 import { AuthenticationStrategy } from "@loopback/authentication";
 import { repository } from "@loopback/repository";
-import { UserRepository } from "../repositories";
 import { ExpressMiddlewareInterceptorProvider } from "@loopback/rest";
 import { ExpressRequestHandler } from "@loopback/express/src/types";
 import { authenticateRequest } from "../authentication/authentication";
+import { UserRepository } from "../repositories/user.repository";
 
 @globalInterceptor("middleware", { tags: { name: "authentication" } })
 export class AuthenticationInterceptor extends ExpressMiddlewareInterceptorProvider<Interceptor> {

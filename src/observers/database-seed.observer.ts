@@ -10,8 +10,8 @@ import child_process from "child_process";
 import * as t from "io-ts";
 import { decodeJson } from "../codec";
 import md5 from "md5";
-import { MatchService } from "../services";
 import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
+import { MatchService } from "../services/match.service";
 
 const exec = promisify(child_process.exec);
 

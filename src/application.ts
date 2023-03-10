@@ -13,11 +13,11 @@ import {
   TokenServiceBindings,
 } from "@loopback/authentication-jwt";
 import { MongoDataSource } from "./datasources";
-import { UserRepository } from "./repositories";
 import { AiArenaBindings } from "./keys";
 import { GraphqlAuthenticationProvider } from "./authentication/graphql-authentication.provider";
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
-import { JwtService } from "./services";
+import { UserRepository } from "./repositories/user.repository";
+import { JwtService } from "./services/jwt.service";
 
 export { ApplicationConfig };
 

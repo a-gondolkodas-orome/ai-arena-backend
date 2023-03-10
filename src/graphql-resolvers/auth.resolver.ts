@@ -1,7 +1,6 @@
 import { inject, service } from "@loopback/core";
 import { arg, GraphQLBindings, mutation, query, resolver, ResolverData } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import { UserRepository } from "../repositories";
 import {
   Credentials,
   LoginResponse,
@@ -9,7 +8,6 @@ import {
   RegistrationInput,
   handleAuthErrors,
 } from "../models/auth";
-import { JwtService, UserService } from "../services";
 import { SecurityBindings, UserProfile } from "@loopback/security";
 import { AuthenticationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
@@ -17,6 +15,9 @@ import { Actor, AuthorizationService } from "../services/authorization.service";
 import { BaseResolver } from "./base.resolver";
 import { User, UserResponse } from "../models/user";
 import { notNull } from "../utils";
+import { JwtService } from "../services/jwt.service";
+import { UserService } from "../services/user.service";
+import { UserRepository } from "../repositories/user.repository";
 
 @resolver()
 export class AuthResolver extends BaseResolver<Actor> {

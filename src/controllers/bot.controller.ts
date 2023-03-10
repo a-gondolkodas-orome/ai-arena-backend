@@ -10,11 +10,12 @@ import {
 import multer from "multer";
 import { inject, intercept, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import { BotRepository } from "../repositories";
-import { BotService, MatchService } from "../services";
 import { HttpStatusCode } from "../errors";
 import { BotSubmitStage } from "../models/bot";
 import { Action, AuthorizationService } from "../services/authorization.service";
+import { BotService } from "../services/bot.service";
+import { BotRepository } from "../repositories/bot.repository";
+import { MatchService } from "../services/match.service";
 
 const multerInterceptor = toInterceptor(
   multer({ storage: multer.memoryStorage() }).single("sourceFile"),

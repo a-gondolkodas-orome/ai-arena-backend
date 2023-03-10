@@ -13,8 +13,10 @@ import {
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
-import { BotRepository, GameRepository, UserRepository } from "../repositories";
-import { BotService } from "../services";
+import { BotService } from "../services/bot.service";
+import { GameRepository } from "../repositories/game.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 export enum BotSubmitStage {
   REGISTERED = "REGISTERED",

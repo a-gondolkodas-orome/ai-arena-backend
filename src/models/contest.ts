@@ -8,21 +8,19 @@ import { Match, MatchWithRelations } from "./match";
 import { registerEnumType } from "type-graphql";
 import { GqlValue } from "../utils";
 import { UserWithRelations } from "@loopback/authentication-jwt";
+import { AssertException, ValidationError } from "../errors";
 import {
   Action,
   Actor,
   AuthorizationService,
-  ContestService,
   ResourceCollection,
-} from "../services";
-import {
-  BotRepository,
-  ContestRepository,
-  GameRepository,
-  MatchRepository,
-  UserRepository,
-} from "../repositories";
-import { AssertException, ValidationError } from "../errors";
+} from "../services/authorization.service";
+import { GameRepository } from "../repositories/game.repository";
+import { MatchRepository } from "../repositories/match.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { ContestService } from "../services/contest.service";
+import { ContestRepository } from "../repositories/contest.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 export enum ContestStatus {
   OPEN = "OPEN",

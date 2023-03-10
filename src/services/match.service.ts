@@ -1,6 +1,5 @@
 import { BindingScope, injectable, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import { BotRepository, GameRepository, MatchRepository } from "../repositories";
 import { Match, MatchRunStage } from "../models/match";
 import path from "path";
 import fs from "fs";
@@ -15,6 +14,9 @@ import { Game } from "../models/game";
 import { BotSubmitStage } from "../models/bot";
 import { BotService } from "./bot.service";
 import EventEmitter from "events";
+import { GameRepository } from "../repositories/game.repository";
+import { MatchRepository } from "../repositories/match.repository";
+import { BotRepository } from "../repositories/bot.repository";
 
 const exec = promisify(child_process.exec);
 

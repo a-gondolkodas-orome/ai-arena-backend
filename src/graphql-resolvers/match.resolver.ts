@@ -18,17 +18,20 @@ import {
   CreateMatchResponse,
   MatchResult,
 } from "../models/match";
-import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { MatchesResponse } from "../models/match";
-import { MatchService } from "../services";
 import { User } from "../models/user";
 import { Game } from "../models/game";
 import { AuthorizationService } from "../services/authorization.service";
 import { Bot } from "../models/bot";
+import { GameRepository } from "../repositories/game.repository";
+import { MatchRepository } from "../repositories/match.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { MatchService } from "../services/match.service";
+import { UserRepository } from "../repositories/user.repository";
 
 @resolver(() => Match)
 export class MatchResolver extends BaseResolver implements ResolverInterface<Match> {

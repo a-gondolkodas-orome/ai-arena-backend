@@ -12,15 +12,17 @@ import {
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { CreateBotResponse, Bot, BotInput, BotResponse, BotsResponse } from "../models/bot";
-import { BotRepository, GameRepository, UserRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
-import { BotService } from "../services";
 import { User } from "../models/user";
 import { Game } from "../models/game";
 import { AuthorizationService } from "../services/authorization.service";
+import { BotService } from "../services/bot.service";
+import { GameRepository } from "../repositories/game.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 @resolver(() => Bot)
 export class BotResolver extends BaseResolver implements ResolverInterface<Bot> {

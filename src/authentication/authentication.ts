@@ -1,7 +1,7 @@
 import { HttpErrors, RedirectRoute, Request } from "@loopback/rest";
 import { Actor } from "../services/authorization.service";
 import { AuthenticationStrategy } from "@loopback/authentication";
-import { UserRepository } from "../repositories";
+import { UserRepository } from "../repositories/user.repository";
 
 export async function authenticateRequest(
   authStrategy: AuthenticationStrategy,

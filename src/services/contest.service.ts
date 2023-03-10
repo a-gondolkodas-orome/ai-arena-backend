@@ -1,11 +1,12 @@
 import { BindingScope, injectable, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import { MatchRepository, ContestRepository } from "../repositories";
 import path from "path";
 import EventEmitter from "events";
 import { Contest, ContestStatus } from "../models/contest";
 import { MatchService } from "./match.service";
 import { UserService } from "./user.service";
+import { MatchRepository } from "../repositories/match.repository";
+import { ContestRepository } from "../repositories/contest.repository";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class ContestService {

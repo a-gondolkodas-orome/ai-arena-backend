@@ -3,11 +3,11 @@ import { Bot } from "../models/bot";
 import { JwtService } from "./jwt.service";
 import * as t from "io-ts";
 import { repository } from "@loopback/repository";
-import { BotRepository } from "../repositories";
 import { AuthorizationError } from "../errors";
 import fsp from "fs/promises";
 import EventEmitter from "events";
 import path from "path";
+import { BotRepository } from "../repositories/bot.repository";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class BotService {

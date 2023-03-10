@@ -11,10 +11,10 @@ import {
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { Game, GameResponse, GamesResponse } from "../models/game";
-import { GameRepository } from "../repositories";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
 import { AuthorizationService } from "../services/authorization.service";
+import { GameRepository } from "../repositories/game.repository";
 
 @resolver(() => Game)
 export class GameResolver extends BaseResolver implements ResolverInterface<Game> {

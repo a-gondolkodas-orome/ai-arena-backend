@@ -9,10 +9,10 @@ import {
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
 import { User, UsersResponse } from "../models/user";
-import { UserRepository } from "../repositories";
 import { handleAuthErrors } from "../models/auth";
 import { BaseResolver } from "./base.resolver";
 import { AuthorizationService } from "../services/authorization.service";
+import { UserRepository } from "../repositories/user.repository";
 
 @resolver(() => User)
 export class UserResolver extends BaseResolver {

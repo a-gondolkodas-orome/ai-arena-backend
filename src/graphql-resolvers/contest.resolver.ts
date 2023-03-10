@@ -26,7 +26,6 @@ import {
   UpdateContestStatusResponse,
   StartContestResponse,
 } from "../models/contest";
-import { ContestRepository } from "../repositories";
 import { AuthorizationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { Game } from "../models/game";
@@ -34,8 +33,12 @@ import { Bot } from "../models/bot";
 import { User } from "../models/user";
 import { Match } from "../models/match";
 import { AuthorizationService } from "../services/authorization.service";
-import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
 import { ContestService } from "../services/contest.service";
+import { GameRepository } from "../repositories/game.repository";
+import { MatchRepository } from "../repositories/match.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { ContestRepository } from "../repositories/contest.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 @resolver(() => Contest)
 export class ContestResolver extends BaseResolver implements ResolverInterface<Contest> {

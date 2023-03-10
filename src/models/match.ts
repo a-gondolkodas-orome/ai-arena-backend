@@ -7,8 +7,17 @@ import { GqlValue } from "../utils";
 import { Bot, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
-import { Action, Actor, AuthorizationService, MatchService, ResourceCollection } from "../services";
-import { BotRepository, GameRepository, MatchRepository, UserRepository } from "../repositories";
+import {
+  Action,
+  Actor,
+  AuthorizationService,
+  ResourceCollection,
+} from "../services/authorization.service";
+import { MatchRepository } from "../repositories/match.repository";
+import { GameRepository } from "../repositories/game.repository";
+import { BotRepository } from "../repositories/bot.repository";
+import { MatchService } from "../services/match.service";
+import { UserRepository } from "../repositories/user.repository";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",

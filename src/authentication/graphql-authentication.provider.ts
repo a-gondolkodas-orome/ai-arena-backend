@@ -3,8 +3,8 @@ import { AiArenaBindings } from "../keys";
 import { AuthenticationStrategy } from "@loopback/authentication";
 import { ContextFunction, ExpressContext } from "@loopback/graphql/src/types";
 import { repository } from "@loopback/repository";
-import { UserRepository } from "../repositories";
 import { authenticateRequest } from "./authentication";
+import { UserRepository } from "../repositories/user.repository";
 
 export class GraphqlAuthenticationProvider implements Provider<ContextFunction<ExpressContext>> {
   constructor(

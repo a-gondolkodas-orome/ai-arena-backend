@@ -11,8 +11,8 @@ import {
   Role,
 } from "../services/authorization.service";
 import { TokenService } from "@loopback/authentication";
-import { UserService } from "../services";
-import { UserRepository } from "../repositories";
+import { UserRepository } from "../repositories/user.repository";
+import { UserService } from "../services/user.service";
 
 registerEnumType(Role, {
   name: "Role",

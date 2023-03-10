@@ -10,7 +10,7 @@ import {
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
-import { GameRepository } from "../repositories";
+import { GameRepository } from "../repositories/game.repository";
 
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")

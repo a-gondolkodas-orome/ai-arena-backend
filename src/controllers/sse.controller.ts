@@ -1,10 +1,11 @@
 import { get, Request, Response, RestBindings } from "@loopback/rest";
 import { inject, service } from "@loopback/core";
-import { BotService, MatchService } from "../services";
 import { HttpStatusCode } from "../errors";
 import { EVENT_TYPE__BOT, EVENT_TYPE__MATCH } from "../common";
 import { setInterval } from "timers";
 import { Time } from "../utils";
+import { BotService } from "../services/bot.service";
+import { MatchService } from "../services/match.service";
 
 export class SseController {
   constructor(

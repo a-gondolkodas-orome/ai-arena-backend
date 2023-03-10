@@ -2,10 +2,10 @@ import { UserService as AuthUserService } from "@loopback/authentication";
 import { repository } from "@loopback/repository";
 import { securityId, UserProfile } from "@loopback/security";
 import { compare } from "bcryptjs";
-import { UserRepository } from "../repositories";
 import { User } from "../models/user";
 import { AssertException, AuthenticationError } from "../errors";
 import { BindingScope, injectable } from "@loopback/core";
+import { UserRepository } from "../repositories/user.repository";
 
 export type Credentials = {
   email: string;
@@ -50,9 +50,7 @@ export class UserService implements AuthUserService<User, Credentials> {
   protected systemUser?: User;
 
   async getSystemUser() {
-    if (!this.systemUser) {
-      this.systemUser = await this.userRepository._getSystemUser();
-    }
-    return this.systemUser;
+    if (this.systemUser) return this.systemUser;
+    return (this.systemUser = await this.userRepository._getSystemUser());
   }
 }
