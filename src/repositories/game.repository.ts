@@ -1,9 +1,9 @@
 import { inject } from "@loopback/core";
-import { DefaultCrudRepository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Game, GameRelations } from "../models/game";
+import { MongodbRepository } from "./mongodb.repository";
 
-export class GameRepository extends DefaultCrudRepository<
+export class GameRepository extends MongodbRepository<
   Game,
   typeof Game.prototype.id,
   GameRelations

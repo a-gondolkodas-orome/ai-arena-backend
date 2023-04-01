@@ -1,5 +1,4 @@
 import { inject } from "@loopback/core";
-import { DefaultCrudRepository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { User } from "../models/user";
 import { Options } from "@loopback/repository/src/common-types";
@@ -9,8 +8,9 @@ import { ValidationError } from "../errors";
 import { notNull } from "../utils";
 import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
 import { UserRelations } from "@loopback/authentication-jwt";
+import { MongodbRepository } from "./mongodb.repository";
 
-export class UserRepository extends DefaultCrudRepository<
+export class UserRepository extends MongodbRepository<
   User,
   typeof User.prototype.id,
   UserRelations

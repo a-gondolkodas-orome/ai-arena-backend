@@ -4,12 +4,10 @@ import { juggler } from "@loopback/repository";
 const config = {
   name: "mongo",
   connector: require("loopback-connector-mongodb"), // see https://github.com/loopbackio/loopback-datasource-juggler/issues/1866
-  url: "mongodb://127.0.0.1:27017/ai-arena",
-  host: "",
-  port: 0,
-  user: "",
-  password: "",
-  database: "",
+  url:
+    process.env.NODE_ENV === "production"
+      ? process.env.MONGODB_URL
+      : "mongodb://127.0.0.1:27017/ai-arena",
   useNewUrlParser: true,
 };
 

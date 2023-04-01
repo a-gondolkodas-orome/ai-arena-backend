@@ -18,6 +18,7 @@ import { GameRepository } from "../repositories/game.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
 import { UserRepository } from "../repositories/user.repository";
+import { AssertException } from "../errors";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -49,6 +50,9 @@ export class MatchRunStatus {
 export class MatchResult {
   @field()
   log: string;
+
+  @field()
+  scoreJson: string;
 }
 
 @objectType()
@@ -142,7 +146,13 @@ export class Match extends Entity {
     botRepository: BotRepository,
   ) {
     await authorizationService.authorize(actor, Action.READ, this, "bots");
-    return botRepository.find({ where: { id: { inq: this.botIds } } });
+    const botsById = new Map(
+      (await botRepository.find({ where: { id: { inq: this.botIds } } })).map((bot) => [
+        bot.id,
+        bot,
+      ]),
+    );
+    return this.botIds.map((botId) => botsById.get(botId));
   }
 
   @field()
@@ -155,7 +165,18 @@ export class Match extends Entity {
   }
 
   get result() {
-    return this.log && { __typename: "MatchResult", log: this.log.file.toString() };
+    if (this.runStatus.stage !== MatchRunStage.RUN_SUCCESS) return null;
+    if (!this.log || !this.scoreJson) {
+      throw new AssertException({
+        message: "Match.result: state inconsistent",
+        values: { stage: this.runStatus.stage, log: !!this.log, scoreJson: !!this.scoreJson },
+      });
+    }
+    return {
+      __typename: "MatchResult",
+      log: this.log.file.toString(),
+      scoreJson: this.scoreJson,
+    };
   }
 
   async getResultAuthorized(actor: Actor, authorizationService: AuthorizationService) {
@@ -170,6 +191,9 @@ export class Match extends Entity {
         fileName: string;
       }
     | undefined;
+
+  @property({ type: "string" })
+  scoreJson: string | undefined;
 }
 
 export interface MatchRelations {

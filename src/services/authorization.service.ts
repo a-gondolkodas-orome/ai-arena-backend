@@ -185,6 +185,7 @@ export class AuthorizationService {
   }
 
   protected async canUseBots(actor: User, botIds: string[]) {
+    botIds = Array.from(new Set(botIds));
     const bots = await this.botRepository.find({ where: { id: { inq: botIds } } });
     return bots.length === botIds.length && bots.every((bot) => bot.userId === actor.id); // TODO handle system bots
   }

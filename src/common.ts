@@ -15,3 +15,9 @@ export enum ErrorType {
   AUTHENTICATION_ERROR = "AUTHENTICATION_ERROR",
   AUTHORIZATION_ERROR = "AUTHORIZATION_ERROR",
 }
+
+export const botConfigCodec = t.type({ id: t.string, runCommand: t.string });
+export const matchConfigCodec = t.type({
+  map: t.string,
+  bots: t.array(botConfigCodec),
+});

@@ -1,5 +1,5 @@
 import { Getter, inject } from "@loopback/core";
-import { BelongsToAccessor, DefaultCrudRepository, repository } from "@loopback/repository";
+import { BelongsToAccessor, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Bot, BotInput, BotRelations, BotSubmitStage } from "../models/bot";
 import { Options } from "@loopback/repository/src/common-types";
@@ -9,13 +9,9 @@ import { ValidationError } from "../errors";
 import { User } from "../models/user";
 import { UserRepository } from "./user.repository";
 import { Game } from "../models/game";
-import { Filter, FilterExcludingWhere } from "@loopback/filter";
+import { MongodbRepository } from "./mongodb.repository";
 
-export class BotRepository extends DefaultCrudRepository<
-  Bot,
-  typeof Bot.prototype.id,
-  BotRelations
-> {
+export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.id, BotRelations> {
   constructor(
     @inject("datasources.mongo") dataSource: MongoDataSource,
     @repository.getter("UserRepository") readonly getUserRepository: Getter<UserRepository>,
@@ -63,22 +59,5 @@ export class BotRepository extends DefaultCrudRepository<
         options,
       ),
     );
-  }
-
-  override async find(filter?: Filter<Bot>, options?: Options) {
-    return (await super.find(filter, options)).map((bot) => convertObjectIdsToString(bot));
-  }
-
-  override async findOne(filter?: Filter<Bot>, options?: Options) {
-    const bot = await super.findOne(filter, options);
-    return bot ? convertObjectIdsToString(bot) : null;
-  }
-
-  override async findById(
-    id: typeof Bot.prototype.id,
-    filter?: FilterExcludingWhere<Bot>,
-    options?: Options,
-  ) {
-    return convertObjectIdsToString(await super.findById(id, filter, options));
   }
 }

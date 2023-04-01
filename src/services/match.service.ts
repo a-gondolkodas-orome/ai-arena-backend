@@ -9,7 +9,6 @@ import { promisify } from "util";
 import child_process from "child_process";
 import * as t from "io-ts";
 import { ProgramSource } from "../models/base";
-import { ValidationError } from "../errors";
 import { Game } from "../models/game";
 import { BotSubmitStage } from "../models/bot";
 import { BotService } from "./bot.service";
@@ -17,6 +16,7 @@ import EventEmitter from "events";
 import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
+import { matchConfigCodec } from "../common";
 
 const exec = promisify(child_process.exec);
 
@@ -63,8 +63,15 @@ export class MatchService {
     }
     const botConfigs = [];
     try {
+      const botCounter = new Map<string, number>();
       for (const botId of match.botIds) {
-        botConfigs.push(await this.prepareBot(botId));
+        const { runCommand, programPath } = await this.prepareBot(botId);
+        const index = botCounter.get(botId) ?? 0;
+        botCounter.set(botId, index + 1);
+        botConfigs.push({
+          id: index ? `${botId}.${index}` : botId,
+          runCommand: `${runCommand.replace("%program", programPath)}`,
+        });
       }
       this.logMatchRunEvent(match, MatchRunStage.PREPARE_BOTS_DONE).catch((e) => console.error(e));
     } catch (error: unknown) {
@@ -77,22 +84,15 @@ export class MatchService {
       await fsp.mkdir(matchPath, { recursive: true });
       const mapPath = path.join(matchPath, "map.txt");
       await fsp.writeFile(mapPath, game.maps[0]);
-      const botsCommandLineParam = botConfigs
-        .map((botConfig) => `"${botConfig.runCommand.replace("%program", botConfig.programPath)}"`)
-        .join(" ");
-      const serverRunCommand = serverConfig.runCommand.replaceAll(
-        /%program|%map|%bots/g,
-        (token) => {
-          if (token === "%program") return `"${serverConfig.programPath}"`;
-          if (token === "%map") return "map.txt";
-          if (token === "%bots") return botsCommandLineParam;
-          throw new ValidationError({
-            fieldErrors: {
-              runCommand: [`unknown replacement pattern: ${token}`],
-            },
-          });
-        },
+      const matchConfigPath = path.join(matchPath, "match-config.json");
+      await fsp.writeFile(
+        matchConfigPath,
+        JSON.stringify(matchConfigCodec.encode({ map: mapPath, bots: botConfigs })),
       );
+      const serverRunCommand =
+        serverConfig.runCommand.replace("%program", `"${serverConfig.programPath}"`) +
+        ` "${matchConfigPath}"`;
+      console.info("running", serverRunCommand);
       await exec(serverRunCommand, { cwd: matchPath });
       const logFileName = "match.log";
       await this.matchRepository.updateById(match.id, {
@@ -100,6 +100,7 @@ export class MatchService {
           file: await fsp.readFile(path.join(matchPath, logFileName)),
           fileName: logFileName,
         },
+        scoreJson: await fsp.readFile(path.join(matchPath, "score.json"), { encoding: "utf8" }),
         runStatus: {
           stage: MatchRunStage.RUN_SUCCESS,
         },

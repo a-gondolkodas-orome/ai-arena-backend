@@ -1,5 +1,5 @@
 import { inject } from "@loopback/core";
-import { DefaultCrudRepository, repository } from "@loopback/repository";
+import { repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Match, MatchInput, MatchRelations, MatchRunStage } from "../models/match";
 import { Options } from "@loopback/repository/src/common-types";
@@ -8,8 +8,9 @@ import { GameRepository } from "./game.repository";
 import { ValidationError } from "../errors";
 import { BotRepository } from "./bot.repository";
 import { User } from "../models/user";
+import { MongodbRepository } from "./mongodb.repository";
 
-export class MatchRepository extends DefaultCrudRepository<
+export class MatchRepository extends MongodbRepository<
   Match,
   typeof Match.prototype.id,
   MatchRelations
@@ -26,6 +27,7 @@ export class MatchRepository extends DefaultCrudRepository<
     const gameIdErrors = [];
     if (!(await this.gameRepository.exists(match.gameId))) gameIdErrors.push("Game not found.");
     const botIdErrors = [];
+    if (!match.botIds.length) botIdErrors.push("No bot specified.");
     for (const botId of match.botIds) {
       const bot = await this.botRepository.findOne({ where: { id: botId } });
       if (!bot) botIdErrors.push(`Bot not found (${botId}).`);

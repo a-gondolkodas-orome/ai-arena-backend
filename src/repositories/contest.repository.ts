@@ -1,10 +1,5 @@
 import { Getter, inject } from "@loopback/core";
-import {
-  BelongsToAccessor,
-  DefaultCrudRepository,
-  ReferencesManyAccessor,
-  repository,
-} from "@loopback/repository";
+import { BelongsToAccessor, ReferencesManyAccessor, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Options } from "@loopback/repository/src/common-types";
 import { Contest, ContestInput, ContestRelations, ContestStatus } from "../models/contest";
@@ -18,8 +13,9 @@ import { Bot } from "../models/bot";
 import { BotRepository } from "./bot.repository";
 import { MatchRepository } from "./match.repository";
 import { Match } from "../models/match";
+import { MongodbRepository } from "./mongodb.repository";
 
-export class ContestRepository extends DefaultCrudRepository<
+export class ContestRepository extends MongodbRepository<
   Contest,
   typeof Contest.prototype.id,
   ContestRelations
