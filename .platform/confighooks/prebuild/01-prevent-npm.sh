@@ -1,0 +1,1 @@
+../../hooks/prebuild/02-prevent-npm.sh
