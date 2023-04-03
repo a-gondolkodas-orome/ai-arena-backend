@@ -3,6 +3,7 @@ import { ApolloError } from "apollo-server-errors";
 import { registerEnumType } from "type-graphql";
 import { enumCodec } from "./codec";
 import { ErrorType } from "./common";
+import { ExecException } from "child_process";
 
 registerEnumType(ErrorType, { name: "ErrorType" });
 
@@ -134,4 +135,21 @@ export class AuthorizationError extends AiArenaException {
       ...data,
     });
   }
+}
+
+export class ExecError extends Error implements ExecException {
+  constructor(error: ExecException, readonly stdout: string, readonly stderr: string) {
+    super(`${error.message}
+    ===== STDOUT =====
+    ${stdout}
+    ===== STDERR =====
+    ${stderr}
+    `);
+    Object.assign(this, error);
+  }
+
+  cmd?: string | undefined;
+  killed?: boolean | undefined;
+  code?: number | undefined;
+  signal?: NodeJS.Signals | undefined;
 }

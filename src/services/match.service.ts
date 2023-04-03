@@ -5,8 +5,6 @@ import path from "path";
 import fs from "fs";
 import fsp from "fs/promises";
 import { decodeJson } from "../codec";
-import { promisify } from "util";
-import child_process from "child_process";
 import * as t from "io-ts";
 import { ProgramSource } from "../models/base";
 import { Game } from "../models/game";
@@ -17,8 +15,7 @@ import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { matchConfigCodec } from "../common";
-
-const exec = promisify(child_process.exec);
+import { exec } from "../utils";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class MatchService {

@@ -1,5 +1,6 @@
-import { AssertException } from "./errors";
+import { AssertException, ExecError } from "./errors";
 import { ObjectId } from "mongodb";
+import child_process, { ExecOptions } from "child_process";
 
 export namespace Time {
   export const msec = 1;
@@ -47,3 +48,12 @@ export function convertObjectIdsToString<T extends object>(entity: T) {
 }
 
 export type GqlValue = { __typename: string };
+
+export function exec(command: string, options: ExecOptions = {}) {
+  return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+    child_process.exec(command, options, (error, stdout, stderr) => {
+      if (error) reject(new ExecError(error, stdout, stderr));
+      resolve({ stdout, stderr });
+    });
+  });
+}
