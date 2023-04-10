@@ -198,7 +198,7 @@ export class MatchService {
             MatchService.aiArenaConfigCodec.encode({
               build: `g++ -std=c++17 -O2 ${programSource.fileName} -o ${targetProgramName}`,
               programPath: targetProgramName,
-              run: targetProgramName,
+              run: "%program",
             }),
           ),
         );

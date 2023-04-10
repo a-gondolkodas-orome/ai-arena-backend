@@ -1,4 +1,4 @@
-import { inject, LifeCycleObserver } from "@loopback/core";
+import { CoreBindings, inject, LifeCycleObserver } from "@loopback/core";
 import { DefaultCrudRepository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Game } from "../models/game";
@@ -12,6 +12,8 @@ import { decodeJson } from "../codec";
 import md5 from "md5";
 import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
 import { MatchService } from "../services/match.service";
+import { AiArenaBackendApplication } from "../application";
+import fs from "fs";
 
 const exec = promisify(child_process.exec);
 
@@ -19,6 +21,8 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
   constructor(
     @inject("datasources.mongo")
     dataSource: MongoDataSource,
+    @inject(CoreBindings.APPLICATION_INSTANCE)
+    protected app: AiArenaBackendApplication,
   ) {
     this.userRepo = new DefaultCrudRepository(User, dataSource);
     this.gameRepo = new DefaultCrudRepository(Game, dataSource);
@@ -82,6 +86,9 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
         if (!mapFile.isFile()) continue;
         maps.push((await fsp.readFile(path.join(mapsFolderPath, mapFile.name))).toString());
       }
+      const publicFolderPath = path.join(gamePath, "public");
+      if (fs.existsSync(publicFolderPath))
+        this.app.static(`/public/games/${file.name}`, publicFolderPath);
       await exec(gameConfig.packageServer.command, { cwd: gamePath });
       const game = {
         id: md5(gameConfig.name).substring(0, 24),

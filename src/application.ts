@@ -2,7 +2,6 @@ import { BootMixin } from "@loopback/boot";
 import { ApplicationConfig, CoreTags } from "@loopback/core";
 import { RestExplorerBindings, RestExplorerComponent } from "@loopback/rest-explorer";
 import { RestApplication } from "@loopback/rest";
-import path from "path";
 import { AiArenaSequence } from "./sequence";
 import { GraphQLBindings, GraphQLComponent } from "@loopback/graphql";
 import { RepositoryMixin } from "@loopback/repository";
@@ -39,7 +38,6 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlAuthenticationProvider);
 
     this.sequence(AiArenaSequence);
-    this.static("/", path.join(__dirname, "../public"));
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: "/explorer",
     });
