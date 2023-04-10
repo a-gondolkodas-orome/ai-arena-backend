@@ -101,6 +101,10 @@ export class User extends Entity {
   }
 }
 
+export interface UserRelations {}
+
+export type UserWithRelations = User & UserRelations;
+
 @objectType()
 export class Users {
   @field(() => [User])

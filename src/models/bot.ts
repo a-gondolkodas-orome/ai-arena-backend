@@ -1,12 +1,11 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { belongsTo, Entity, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
-import { User } from "./user";
+import { User, UserWithRelations } from "./user";
 import { Game, GameWithRelations } from "./game";
 import { GqlValue } from "../utils";
 import { ProgramSource } from "./base";
 import { registerEnumType } from "type-graphql";
-import { UserWithRelations } from "@loopback/authentication-jwt";
 import {
   Action,
   Actor,

@@ -140,6 +140,7 @@ export class Match extends Entity {
   @referencesMany(() => Bot)
   botIds: string[];
 
+  // noinspection DuplicatedCode
   async getBotsAuthorized(
     actor: Actor,
     authorizationService: AuthorizationService,

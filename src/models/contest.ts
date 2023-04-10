@@ -245,13 +245,20 @@ export class Contest extends Entity {
   @referencesMany(() => Bot)
   botIds: string[];
 
+  // noinspection DuplicatedCode
   async getBotsAuthorized(
     actor: Actor,
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
   ) {
     await authorizationService.authorize(actor, Action.READ, this, "bots");
-    return botRepository.find({ where: { id: { inq: this.botIds } } });
+    const botsById = new Map(
+      (await botRepository.find({ where: { id: { inq: this.botIds } } })).map((bot) => [
+        bot.id,
+        bot,
+      ]),
+    );
+    return this.botIds.map((botId) => botsById.get(botId));
   }
 
   @referencesMany(() => Match, { name: "matches" })

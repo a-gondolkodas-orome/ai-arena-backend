@@ -16,6 +16,7 @@ import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { matchConfigCodec } from "../common";
 import { exec } from "../utils";
+import { UserService } from "./user.service";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class MatchService {
@@ -37,6 +38,7 @@ export class MatchService {
 
   constructor(
     @service() protected botService: BotService,
+    @service() protected userService: UserService,
     @repository("GameRepository") protected gameRepository: GameRepository,
     @repository("BotRepository") protected botRepository: BotRepository,
     @repository("MatchRepository") protected matchRepository: MatchRepository,
@@ -61,12 +63,16 @@ export class MatchService {
     const botConfigs = [];
     try {
       const botCounter = new Map<string, number>();
+      const isContest = match.userId === (await this.userService.getSystemUser()).id;
       for (const botId of match.botIds) {
         const { runCommand, programPath } = await this.prepareBot(botId);
-        const index = botCounter.get(botId) ?? 0;
-        botCounter.set(botId, index + 1);
+        const bot = await this.botRepository.findById(botId, { include: ["user"] });
+        const botName = isContest ? bot.user.username : bot.name;
+        const index = botCounter.get(botName) ?? 0;
+        botCounter.set(botName, index + 1);
         botConfigs.push({
           id: index ? `${botId}.${index}` : botId,
+          name: index ? `${botName}.${index}` : botName,
           runCommand: `${runCommand.replace("%program", programPath)}`,
         });
       }
@@ -84,7 +90,7 @@ export class MatchService {
       const matchConfigPath = path.join(matchPath, "match-config.json");
       await fsp.writeFile(
         matchConfigPath,
-        JSON.stringify(matchConfigCodec.encode({ map: mapPath, bots: botConfigs })),
+        JSON.stringify(matchConfigCodec.encode({ map: mapPath, bots: botConfigs }), undefined, 2),
       );
       const serverRunCommand =
         serverConfig.runCommand.replace("%program", `"${serverConfig.programPath}"`) +
