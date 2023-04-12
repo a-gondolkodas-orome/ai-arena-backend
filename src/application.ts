@@ -17,6 +17,7 @@ import { GraphqlAuthenticationProvider } from "./authentication/graphql-authenti
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
 import { UserRepository } from "./repositories/user.repository";
 import { JwtService } from "./services/jwt.service";
+import path from "path";
 
 export { ApplicationConfig };
 
@@ -38,6 +39,7 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlAuthenticationProvider);
 
     this.sequence(AiArenaSequence);
+    this.static("/", path.join(__dirname, "../public"));
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: "/explorer",
     });

@@ -21,12 +21,14 @@ import { BotRepository } from "../repositories/bot.repository";
 import { ContestService } from "../services/contest.service";
 import { ContestRepository } from "../repositories/contest.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { MatchService } from "../services/match.service";
 
 export enum ContestStatus {
   OPEN = "OPEN",
   CLOSED = "CLOSED",
   RUNNING = "RUNNING",
   FINISHED = "FINISHED",
+  RUN_ERROR = "RUN_ERROR",
 }
 
 registerEnumType(ContestStatus, {
@@ -130,6 +132,7 @@ export class Contest extends Entity {
     contestId: string,
     status: ContestStatus,
     authorizationService: AuthorizationService,
+    matchService: MatchService,
     contestRepository: ContestRepository,
   ) {
     const contest = await contestRepository.findOne({ where: { id: contestId } });
@@ -141,8 +144,16 @@ export class Contest extends Entity {
     await authorizationService.authorize(actor, Action.UPDATE, contest, "status");
     if (
       (contest.status === ContestStatus.OPEN && status === ContestStatus.CLOSED) ||
-      (contest.status === ContestStatus.CLOSED && status === ContestStatus.OPEN)
+      (contest.status === ContestStatus.CLOSED && status === ContestStatus.OPEN) ||
+      ([ContestStatus.FINISHED, ContestStatus.RUN_ERROR].includes(contest.status) &&
+        status === ContestStatus.OPEN)
     ) {
+      if ([ContestStatus.FINISHED, ContestStatus.RUN_ERROR].includes(contest.status)) {
+        for (const matchId of contest.matchIds) {
+          await matchService.deleteMatch(matchId);
+        }
+        contest.matchIds = [];
+      }
       contest.status = status;
       await contestRepository.update(contest);
       return contest;
@@ -280,6 +291,15 @@ export class Contest extends Entity {
   async getStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
     await authorizationService.authorize(actor, Action.READ, this, "status");
     return this.status;
+  }
+
+  @field({ nullable: true })
+  @property()
+  scoreJson?: string;
+
+  async getScoreJsonAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "scoreJson");
+    return this.scoreJson;
   }
 }
 

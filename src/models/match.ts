@@ -193,8 +193,8 @@ export class Match extends Entity {
       }
     | undefined;
 
-  @property({ type: "string" })
-  scoreJson: string | undefined;
+  @property()
+  scoreJson?: string;
 }
 
 export interface MatchRelations {

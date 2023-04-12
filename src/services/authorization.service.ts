@@ -121,6 +121,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "date") return true;
             if (action === Action.READ && field === "bots") return true;
             if (action === Action.READ && field === "status") return true;
+            if (action === Action.READ && field === "scoreJson") return true;
             if (
               action === Action.CONTEST_REGISTER &&
               value instanceof Bot &&

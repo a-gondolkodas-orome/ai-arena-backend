@@ -39,11 +39,13 @@ import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestRepository } from "../repositories/contest.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { MatchService } from "../services/match.service";
 
 @resolver(() => Contest)
 export class ContestResolver extends BaseResolver implements ResolverInterface<Contest> {
   constructor(
     @service() protected authorizationService: AuthorizationService,
+    @service() protected matchService: MatchService,
     @service() protected contestService: ContestService,
     @repository(BotRepository) protected botRepository: BotRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
@@ -176,6 +178,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
           contestId,
           status,
           this.authorizationService,
+          this.matchService,
           this.contestRepository,
         );
         return result instanceof Contest
@@ -284,5 +287,10 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
   @fieldResolver(() => ContestStatus)
   async status(@root() contest: Contest) {
     return contest.getStatusAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver()
+  async scoreJson(@root() contest: Contest) {
+    return contest.getScoreJsonAuthorized(this.actor, this.authorizationService);
   }
 }

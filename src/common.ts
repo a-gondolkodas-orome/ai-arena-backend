@@ -21,3 +21,5 @@ export const matchConfigCodec = t.type({
   map: t.string,
   bots: t.array(botConfigCodec),
 });
+
+export const scoresCodec = t.record(t.string, t.number);
