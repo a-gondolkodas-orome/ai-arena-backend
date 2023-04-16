@@ -38,7 +38,7 @@ export class BotSubmitStatus {
 
   @field({ nullable: true })
   @property()
-  log: string;
+  log?: string;
 }
 
 @objectType()
@@ -62,7 +62,7 @@ export class Bot extends Entity {
   ) {
     await authorizationService.authorize(actor, Action.READ, ResourceCollection.BOTS);
     return botRepository.find({
-      where: { gameId, userId: actor.id },
+      where: { gameId, userId: actor.id, deleted: { neq: true } },
     });
   }
 
@@ -84,7 +84,14 @@ export class Bot extends Entity {
   ) {
     const bot = await botRepository.findOne({ where: { id } });
     await authorizationService.authorize(actor, Action.DELETE, bot);
-    await botService.deleteBot(id);
+    await botService.deleteBotBuild(id);
+    if (!(await botService.tryDeleteBot(id))) {
+      await botRepository.updateById(id, {
+        deleted: true,
+        submitStatus: undefined,
+        source: undefined,
+      });
+    }
   }
 
   @field(() => ID)
@@ -138,8 +145,17 @@ export class Bot extends Entity {
     return this.submitStatus;
   }
 
+  @field()
   @property()
-  source: ProgramSource;
+  deleted: boolean;
+
+  async getDeletedAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "deleted");
+    return this.deleted;
+  }
+
+  @property()
+  source?: ProgramSource;
 
   @property()
   versionNumber: number;

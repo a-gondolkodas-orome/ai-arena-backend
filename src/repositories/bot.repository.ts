@@ -55,6 +55,7 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
           userId: user.id,
           submitStatus: { stage: BotSubmitStage.REGISTERED },
           versionNumber: 0,
+          deleted: false,
         },
         options,
       ),

@@ -150,7 +150,7 @@ export class Contest extends Entity {
     ) {
       if ([ContestStatus.FINISHED, ContestStatus.RUN_ERROR].includes(contest.status)) {
         for (const matchId of contest.matchIds) {
-          await matchService.deleteMatch(matchId);
+          await matchService.deleteMatchBuild(matchId);
         }
         contest.matchIds = [];
       }

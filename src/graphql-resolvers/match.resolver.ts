@@ -32,6 +32,7 @@ import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
 import { UserRepository } from "../repositories/user.repository";
+import { BotService } from "../services/bot.service";
 
 @resolver(() => Match)
 export class MatchResolver extends BaseResolver implements ResolverInterface<Match> {
@@ -41,6 +42,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     @repository("GameRepository") protected gameRepository: GameRepository,
     @repository("BotRepository") protected botRepository: BotRepository,
     @service() protected authorizationService: AuthorizationService,
+    @service() protected botService: BotService,
     @service() protected matchService: MatchService,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
   ) {
@@ -108,6 +110,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
         id,
         this.authorizationService,
         this.matchRepository,
+        this.botService,
         this.matchService,
       ),
     );

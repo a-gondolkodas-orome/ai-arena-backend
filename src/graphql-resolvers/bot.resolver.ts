@@ -112,4 +112,9 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   async submitStatus(@root() bot: Bot) {
     return bot.getSubmitStatusAuthorized(this.actor, this.authorizationService);
   }
+
+  @fieldResolver()
+  async deleted(@root() bot: Bot) {
+    return bot.getDeletedAuthorized(this.actor, this.authorizationService);
+  }
 }

@@ -17,6 +17,7 @@ import { BotRepository } from "../repositories/bot.repository";
 import { matchConfigCodec } from "../common";
 import { exec } from "../utils";
 import { UserService } from "./user.service";
+import { AssertException } from "../errors";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class MatchService {
@@ -139,6 +140,11 @@ export class MatchService {
 
   async prepareBot(botId: string) {
     const bot = await this.botRepository.findById(botId);
+    if (!bot.source)
+      throw new AssertException({
+        message: "MatchService.prepareBot: bot has no source code (check the upload request)",
+        values: { id: bot.id },
+      });
     const botBuildPath = path.join(BotService.getBotPath(botId), "build");
     const { runCommand, programPath } = await this.prepareProgram(botBuildPath, bot.source, "bot");
     return { runCommand, programPath };
@@ -147,6 +153,11 @@ export class MatchService {
   async checkBot(botId: string) {
     const bot = await this.botRepository.findById(botId);
     try {
+      if (!bot.source)
+        throw new AssertException({
+          message: "MatchService.checkBot: bot has no source code (check the upload request)",
+          values: { id: bot.id },
+        });
       const botBuildPath = path.join(BotService.getBotPath(botId), "build");
       const { buildLog } = await this.prepareProgram(botBuildPath, bot.source, "bot");
       await this.botRepository.updateById(botId, {
@@ -214,8 +225,7 @@ export class MatchService {
     return !!error && typeof (error as { message: string }).message === "string";
   }
 
-  async deleteMatch(matchId: string) {
-    await this.matchRepository.deleteById(matchId);
+  async deleteMatchBuild(matchId: string) {
     await fsp.rm(MatchService.getMatchPath(matchId), { recursive: true, force: true });
   }
 }

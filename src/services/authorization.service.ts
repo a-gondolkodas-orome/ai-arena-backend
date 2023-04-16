@@ -110,6 +110,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "user") return true;
             if (action === Action.READ && field === "game") return true;
             if (action === Action.READ && field === "name") return true;
+            if (action === Action.READ && field === "deleted") return true;
           }
           if (action === Action.READ && object === ResourceCollection.MATCHES) return true;
           if (action === Action.READ && object === ResourceCollection.CONTESTS) return true;

@@ -8,6 +8,8 @@ import fsp from "fs/promises";
 import EventEmitter from "events";
 import path from "path";
 import { BotRepository } from "../repositories/bot.repository";
+import { MatchRepository } from "../repositories/match.repository";
+import { ContestRepository } from "../repositories/contest.repository";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class BotService {
@@ -26,7 +28,9 @@ export class BotService {
   }
 
   constructor(
-    @repository("BotRepository") protected botRepository: BotRepository,
+    @repository(BotRepository) protected botRepository: BotRepository,
+    @repository(MatchRepository) protected matchRepository: MatchRepository,
+    @repository(ContestRepository) protected contestRepository: ContestRepository,
     @service() protected jwtService: JwtService,
   ) {}
 
@@ -66,9 +70,18 @@ export class BotService {
     return tokenData;
   }
 
-  async deleteBot(botId: string) {
-    await this.botRepository.deleteById(botId);
+  async deleteBotBuild(botId: string) {
     await fsp.rm(BotService.getBotPath(botId), { recursive: true, force: true });
+  }
+
+  async tryDeleteBot(id: string) {
+    if (
+      (await this.matchRepository.count({ botIds: id as string[] & string })).count ||
+      (await this.contestRepository.count({ botIds: id as string[] & string })).count
+    )
+      return false;
+    await this.botRepository.deleteById(id);
+    return true;
   }
 
   sse = new EventEmitter();

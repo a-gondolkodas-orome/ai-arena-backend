@@ -19,6 +19,7 @@ import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
 import { UserRepository } from "../repositories/user.repository";
 import { AssertException } from "../errors";
+import { BotService } from "../services/bot.service";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -97,11 +98,21 @@ export class Match extends Entity {
     id: string,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
+    botService: BotService,
     matchService: MatchService,
   ) {
-    const match = await matchRepository.findOne({ where: { id } });
+    const match = await matchRepository.findOne({ where: { id }, include: ["bots"] });
     await authorizationService.authorize(actor, Action.DELETE, match);
-    await matchService.deleteMatch(id);
+    if (match === null)
+      throw new AssertException({
+        message: "Match.delete: should not be authorized for null match",
+      });
+    await matchService.deleteMatchBuild(id);
+    await matchRepository.deleteById(id);
+    const deletedBotIds = new Set(match.bots.filter((bot) => bot.deleted).map((bot) => bot.id));
+    for (const botId of deletedBotIds) {
+      await botService.tryDeleteBot(botId);
+    }
   }
 
   @field(() => ID)
