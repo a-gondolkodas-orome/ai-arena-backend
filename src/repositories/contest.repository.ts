@@ -45,8 +45,16 @@ export class ContestRepository extends MongodbRepository<
 
   async validateAndCreate(actor: User, contest: ContestInput, options?: Options) {
     const gameIdErrors = [];
-    if (!(await (await this.getGameRepository()).exists(contest.gameId)))
-      gameIdErrors.push("Game not found.");
+    const mapNameErrors = [];
+    const game = await (await this.getGameRepository()).findOne({ where: { id: contest.gameId } });
+    if (!game) gameIdErrors.push("Game not found.");
+    else {
+      const gameMapNames = game.maps.map((map) => map.name);
+      for (const contestMapName of contest.mapNames)
+        if (!gameMapNames.includes(contestMapName)) {
+          mapNameErrors.push(`Map ${contestMapName} not found.`);
+        }
+    }
     const nameErrors = [];
     if (contest.name.length === 0) nameErrors.push("Contest name must not be empty");
     const contestCount = await this.count({ name: contest.name });

@@ -253,6 +253,15 @@ export class Contest extends Entity {
     return this.date;
   }
 
+  @field(() => [String!])
+  @property.array(String)
+  mapNames: string[];
+
+  async getMapNamesAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "mapNames");
+    return this.mapNames;
+  }
+
   @referencesMany(() => Bot)
   botIds: string[];
 
@@ -316,6 +325,9 @@ export type ContestWithRelations = Contest & ContestRelations;
 export class ContestInput {
   @field()
   gameId: string;
+
+  @field(() => [String!])
+  mapNames: string[];
 
   @field()
   name: string;

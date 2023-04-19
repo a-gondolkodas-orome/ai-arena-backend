@@ -6,7 +6,7 @@ import fs from "fs";
 import fsp from "fs/promises";
 import { decodeJson } from "../codec";
 import * as t from "io-ts";
-import { ProgramSource } from "../models/base";
+import { File } from "../models/base";
 import { Game } from "../models/game";
 import { BotSubmitStage } from "../models/bot";
 import { BotService } from "./bot.service";
@@ -86,8 +86,15 @@ export class MatchService {
     try {
       const matchPath = MatchService.getMatchPath(match.id);
       await fsp.mkdir(matchPath, { recursive: true });
-      const mapPath = path.join(matchPath, "map.txt");
-      await fsp.writeFile(mapPath, game.maps[0]);
+      const mapPath = path.join(matchPath, match.mapName);
+      const gameMap = game.maps.find((map) => map.name === match.mapName);
+      if (!gameMap) {
+        throw new AssertException({
+          message: "MatchService.runMatch: map not found",
+          values: { mapName: match.mapName, matchId: match.id, game: game.name },
+        });
+      }
+      await fsp.writeFile(mapPath, gameMap.file);
       const matchConfigPath = path.join(matchPath, "match-config.json");
       await fsp.writeFile(
         matchConfigPath,
@@ -181,7 +188,7 @@ export class MatchService {
 
   protected async prepareProgram(
     buildPath: string,
-    programSource: ProgramSource,
+    programSource: File,
     targetProgramName: string,
   ) {
     const configFilePath = path.join(buildPath, "..", MatchService.AI_ARENA_CONFIG_FILE_NAME);
@@ -195,7 +202,7 @@ export class MatchService {
     } else {
       await fsp.rm(buildPath, { recursive: true, force: true });
       await fsp.mkdir(buildPath, { recursive: true });
-      await fsp.writeFile(path.join(buildPath, programSource.fileName), programSource.file);
+      await fsp.writeFile(path.join(buildPath, programSource.fileName), programSource.content);
       if (programSource.fileName.endsWith(".zip")) {
         await exec(`unzip ${programSource.fileName}`, { cwd: buildPath });
         await fsp.rename(

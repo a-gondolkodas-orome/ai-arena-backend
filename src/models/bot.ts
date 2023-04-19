@@ -1,10 +1,10 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
-import { belongsTo, Entity, model, property } from "@loopback/repository";
+import { belongsTo, Entity, Model, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User, UserWithRelations } from "./user";
 import { Game, GameWithRelations } from "./game";
 import { GqlValue } from "../utils";
-import { ProgramSource } from "./base";
+import { File } from "./base";
 import { registerEnumType } from "type-graphql";
 import {
   Action,
@@ -31,7 +31,7 @@ registerEnumType(BotSubmitStage, {
 
 @objectType()
 @model()
-export class BotSubmitStatus {
+export class BotSubmitStatus extends Model {
   @field(() => BotSubmitStage)
   @property()
   stage: BotSubmitStage;
@@ -155,7 +155,7 @@ export class Bot extends Entity {
   }
 
   @property()
-  source?: ProgramSource;
+  source?: File;
 
   @property()
   versionNumber: number;

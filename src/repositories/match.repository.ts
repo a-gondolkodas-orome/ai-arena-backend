@@ -39,18 +39,32 @@ export class MatchRepository extends MongodbRepository<
 
   async validateAndCreate(actor: User, match: MatchInput, options?: Options) {
     const gameIdErrors = [];
-    if (!(await (await this.getGameRepository()).exists(match.gameId)))
-      gameIdErrors.push("Game not found.");
+    const mapNameErrors = [];
+    const game = await (await this.getGameRepository()).findOne({ where: { id: match.gameId } });
+    let map;
+    if (!game) gameIdErrors.push("Game not found.");
+    else {
+      map = game.maps.find((gameMap) => gameMap.name === match.mapName);
+      if (!map) {
+        mapNameErrors.push("Map not found.");
+      }
+    }
     const botIdErrors = [];
-    if (!match.botIds.length) botIdErrors.push("No bot specified.");
+    if (map) {
+      if (match.botIds.length < map.playerCount.min)
+        botIdErrors.push("Not enough bot specified. Min: " + map.playerCount.min);
+      if (match.botIds.length > map.playerCount.max)
+        botIdErrors.push("Too many bots specified. Max: " + map.playerCount.max);
+    }
     for (const botId of match.botIds) {
       const bot = await (await this.getBotRepository()).findOne({ where: { id: botId } });
       if (!bot) botIdErrors.push(`Bot not found (${botId}).`);
     }
-    if (gameIdErrors.length || botIdErrors.length) {
+    if (gameIdErrors.length || mapNameErrors.length || botIdErrors.length) {
       throw new ValidationError({
         fieldErrors: {
           ...(gameIdErrors.length && { gameId: gameIdErrors }),
+          ...(mapNameErrors.length && { mapName: mapNameErrors }),
           ...(botIdErrors.length && { botIds: botIdErrors }),
         },
       });

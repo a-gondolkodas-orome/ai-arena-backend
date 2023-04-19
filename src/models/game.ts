@@ -1,7 +1,7 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
-import { Entity, model, property } from "@loopback/repository";
+import { Entity, Model, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
-import { ProgramSource } from "./base";
+import { File } from "./base";
 import { GqlValue } from "../utils";
 import { fromByteArray } from "base64-js";
 import {
@@ -15,7 +15,7 @@ import { GameRepository } from "../repositories/game.repository";
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")
 @model()
-export class PlayerCount {
+export class PlayerCount extends Model {
   @field()
   @property()
   min: number;
@@ -23,6 +23,21 @@ export class PlayerCount {
   @field()
   @property()
   max: number;
+}
+
+@objectType()
+@model()
+export class GameMap extends Model {
+  @field()
+  @property()
+  playerCount: PlayerCount;
+
+  @field()
+  @property()
+  name: string;
+
+  @property()
+  file: string;
 }
 
 @objectType()
@@ -105,11 +120,17 @@ export class Game extends Entity {
     return this.playerCount;
   }
 
-  @property.array(String)
-  maps: string[];
+  @field(() => [GameMap])
+  @property.array(GameMap)
+  maps: GameMap[];
+
+  async getMapsAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "maps");
+    return this.maps;
+  }
 
   @property()
-  server: ProgramSource;
+  server: File;
 }
 
 export interface GameRelations {}

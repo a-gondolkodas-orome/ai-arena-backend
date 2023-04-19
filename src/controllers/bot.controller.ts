@@ -81,7 +81,7 @@ export class BotController {
     await this.botRepository.updateById(tokenData.bot.id, {
       source: {
         fileName: request.file.originalname,
-        file: request.file.buffer,
+        content: request.file.buffer,
       },
       submitStatus: {
         stage: BotSubmitStage.SOURCE_UPLOAD_DONE,

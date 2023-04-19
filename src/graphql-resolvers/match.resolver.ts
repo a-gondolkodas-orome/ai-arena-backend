@@ -131,6 +131,11 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     return match.getGameAuthorized(this.actor, this.authorizationService, this.gameRepository);
   }
 
+  @fieldResolver(() => Game)
+  async mapName(@root() match: Match) {
+    return match.getMapNameAuthorized(this.actor, this.authorizationService);
+  }
+
   @fieldResolver(() => [Bot])
   async bots(@root() match: Match) {
     return match.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);

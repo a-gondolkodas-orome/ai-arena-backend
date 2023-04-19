@@ -102,6 +102,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "picture") return true;
             if (action === Action.READ && field === "fullDescription") return true;
             if (action === Action.READ && field === "playerCount") return true;
+            if (action === Action.READ && field === "maps") return true;
           }
           if (action === Action.READ && object === ResourceCollection.BOTS) return true;
           if (action === Action.CREATE && object instanceof BotInput) return true;
@@ -120,6 +121,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "owner") return true;
             if (action === Action.READ && field === "name") return true;
             if (action === Action.READ && field === "date") return true;
+            if (action === Action.READ && field === "mapNames") return true;
             if (action === Action.READ && field === "bots") return true;
             if (action === Action.READ && field === "status") return true;
             if (action === Action.READ && field === "scoreJson") return true;
@@ -170,6 +172,7 @@ export class AuthorizationService {
         if (action === Action.READ && field === "id") return true;
         if (action === Action.READ && field === "user") return true;
         if (action === Action.READ && field === "game") return true;
+        if (action === Action.READ && field === "mapName") return true;
         if (action === Action.READ && field === "bots") return true;
         if (action === Action.READ && field === "date") return true;
         if (action === Action.READ && field === "runStatus") return true;

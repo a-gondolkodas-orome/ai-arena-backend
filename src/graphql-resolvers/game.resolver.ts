@@ -76,4 +76,9 @@ export class GameResolver extends BaseResolver implements ResolverInterface<Game
   async playerCount(@root() game: Game) {
     return game.getPlayerCountAuthorized(this.actor, this.authorizationService);
   }
+
+  @fieldResolver()
+  async maps(@root() game: Game) {
+    return game.getMapsAuthorized(this.actor, this.authorizationService);
+  }
 }

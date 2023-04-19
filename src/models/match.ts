@@ -1,5 +1,5 @@
 import { field, ID, inputType, objectType } from "@loopback/graphql";
-import { belongsTo, Entity, model, property, referencesMany } from "@loopback/repository";
+import { belongsTo, Entity, Model, model, property, referencesMany } from "@loopback/repository";
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
 import { Game, GameWithRelations } from "./game";
@@ -37,7 +37,7 @@ registerEnumType(MatchRunStage, {
 
 @objectType()
 @model()
-export class MatchRunStatus {
+export class MatchRunStatus extends Model {
   @field(() => MatchRunStage)
   @property()
   stage: MatchRunStage;
@@ -148,6 +148,15 @@ export class Match extends Entity {
     return gameRepository.findById(this.userId);
   }
 
+  @field()
+  @property()
+  mapName: string;
+
+  async getMapNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "mapName");
+    return this.mapName;
+  }
+
   @referencesMany(() => Bot)
   botIds: string[];
 
@@ -221,6 +230,9 @@ export class MatchInput {
   @field()
   gameId: string;
 
+  @field()
+  mapName: string;
+
   @field(() => [String])
   botIds: string[];
 }
@@ -229,6 +241,8 @@ export class MatchInput {
 export class CreateMatchFieldErrors {
   @field(() => [String!], { nullable: true })
   gameId?: string[];
+  @field(() => [String!], { nullable: true })
+  mapName?: string[];
   @field(() => [String!], { nullable: true })
   botIds?: string[];
 }

@@ -53,16 +53,20 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
 
   protected static readonly GAME_CONFIG_FILE_NAME = "ai-arena.game.config.json";
 
+  protected static readonly playerCountCodec = t.type({ min: t.number, max: t.number });
   protected static readonly gameConfigCodec = t.type({
     name: t.string,
     shortDescription: t.string,
     picturePath: t.string,
     fullDescriptionPath: t.string,
-    playerCount: t.type({
-      min: t.number,
-      max: t.number,
-    }),
-    mapsFolderPath: t.string,
+    playerCount: DatabaseSeedObserver.playerCountCodec,
+    maps: t.array(
+      t.type({
+        name: t.string,
+        path: t.string,
+        playerCount: DatabaseSeedObserver.playerCountCodec,
+      }),
+    ),
     packageServer: t.type({
       command: t.string,
       result: t.string,
@@ -80,11 +84,13 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           await fsp.readFile(path.join(gamePath, DatabaseSeedObserver.GAME_CONFIG_FILE_NAME))
         ).toString(),
       );
-      const mapsFolderPath = path.join(gamePath, gameConfig.mapsFolderPath);
       const maps = [];
-      for (const mapFile of await fsp.readdir(mapsFolderPath, { withFileTypes: true })) {
-        if (!mapFile.isFile()) continue;
-        maps.push((await fsp.readFile(path.join(mapsFolderPath, mapFile.name))).toString());
+      for (const map of gameConfig.maps) {
+        maps.push({
+          name: map.name,
+          playerCount: map.playerCount,
+          file: await fsp.readFile(path.join(gamePath, map.path), { encoding: "utf8" }),
+        });
       }
       const publicFolderPath = path.join(gamePath, "public");
       if (fs.existsSync(publicFolderPath))
@@ -101,7 +107,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
         playerCount: gameConfig.playerCount,
         maps,
         server: {
-          file: await fsp.readFile(path.join(gamePath, gameConfig.packageServer.result)),
+          content: await fsp.readFile(path.join(gamePath, gameConfig.packageServer.result)),
           fileName: path.basename(gameConfig.packageServer.result),
         },
       };

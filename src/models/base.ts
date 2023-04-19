@@ -1,9 +1,9 @@
-import { model, property } from "@loopback/repository";
+import { Model, model, property } from "@loopback/repository";
 
 @model()
-export class ProgramSource {
+export class File extends Model {
   @property()
-  file: Buffer;
+  content: Buffer;
 
   @property()
   fileName: string;

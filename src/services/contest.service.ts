@@ -42,40 +42,43 @@ export class ContestService {
     const increaseScore = (botId: string, increment: number) => {
       contestScores.set(botId, (contestScores.get(botId) ?? 0) + increment);
     };
-    for (let botIdx1 = 0; botIdx1 < contest.botIds.length; ++botIdx1) {
-      for (let botIdx2 = botIdx1 + 1; botIdx2 < contest.botIds.length; ++botIdx2) {
-        const botId1 = contest.botIds[botIdx1];
-        const botId2 = contest.botIds[botIdx2];
-        let match = await this.matchRepository.validateAndCreate(
-          await this.userService.getSystemUser(),
-          {
-            gameId: contest.gameId,
-            botIds: [botId1, botId2],
-          },
-        );
-        contest.matchIds.push(match.id);
-        await this.contestRepository.update(contest);
-        await this.matchService.runMatch(match);
-        match = await this.matchRepository.findById(match.id);
-        if (match.runStatus.stage !== MatchRunStage.RUN_SUCCESS) {
-          contest.status = ContestStatus.RUN_ERROR;
+    for (const mapName of contest.mapNames) {
+      for (let botIdx1 = 0; botIdx1 < contest.botIds.length; ++botIdx1) {
+        for (let botIdx2 = botIdx1 + 1; botIdx2 < contest.botIds.length; ++botIdx2) {
+          const botId1 = contest.botIds[botIdx1];
+          const botId2 = contest.botIds[botIdx2];
+          let match = await this.matchRepository.validateAndCreate(
+            await this.userService.getSystemUser(),
+            {
+              mapName,
+              gameId: contest.gameId,
+              botIds: [botId1, botId2],
+            },
+          );
+          contest.matchIds.push(match.id);
           await this.contestRepository.update(contest);
-          return;
-        }
-        if (!match.scoreJson) {
-          throw new AssertException({
-            message: "ContestService.runContest: missing scoreJson",
-            values: { contestId: contest.id },
-          });
-        }
-        const matchScores = decodeJson(scoresCodec, match.scoreJson);
-        if (matchScores[botId1] === matchScores[botId2]) {
-          increaseScore(botId1, 0.5);
-          increaseScore(botId2, 0.5);
-        } else if (matchScores[botId1] > matchScores[botId2]) {
-          increaseScore(botId1, 1);
-        } else {
-          increaseScore(botId2, 1);
+          await this.matchService.runMatch(match);
+          match = await this.matchRepository.findById(match.id);
+          if (match.runStatus.stage !== MatchRunStage.RUN_SUCCESS) {
+            contest.status = ContestStatus.RUN_ERROR;
+            await this.contestRepository.update(contest);
+            return;
+          }
+          if (!match.scoreJson) {
+            throw new AssertException({
+              message: "ContestService.runContest: missing scoreJson",
+              values: { contestId: contest.id },
+            });
+          }
+          const matchScores = decodeJson(scoresCodec, match.scoreJson);
+          if (matchScores[botId1] === matchScores[botId2]) {
+            increaseScore(botId1, 0.5);
+            increaseScore(botId2, 0.5);
+          } else if (matchScores[botId1] > matchScores[botId2]) {
+            increaseScore(botId1, 1);
+          } else {
+            increaseScore(botId2, 1);
+          }
         }
       }
     }
