@@ -9,6 +9,7 @@ import { Game, GameInput, GameWithRelations } from "../models/game";
 import { BindingScope, injectable } from "@loopback/core";
 import { UserWithRelations } from "@loopback/authentication-jwt";
 import { BotRepository } from "../repositories/bot.repository";
+import { ContestRepository } from "../repositories/contest.repository";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
 
@@ -139,6 +140,7 @@ export class AuthorizationService {
   }
 
   @repository("BotRepository") protected botRepository: BotRepository;
+  @repository("ContestRepository") protected contestRepository: ContestRepository;
 
   async checkRelationshipBasedAccess<T extends ResourceObject>(
     actor: Actor,
@@ -167,8 +169,16 @@ export class AuthorizationService {
       return true;
     if (object instanceof Match) {
       const bots = await this.botRepository.find({ where: { id: { inq: object.botIds } } });
-      const isParticipant = bots.some((bot) => bot.userId === actor.id);
-      if (object.userId === actor.id || isParticipant) {
+      const isMatchParticipant = bots.some((bot) => bot.userId === actor.id);
+      let isContestParticipant = false;
+      if (!isMatchParticipant) {
+        const contest = await this.contestRepository.findOne({
+          where: { matchIds: object.id as string[] & string },
+          include: ["bots"],
+        });
+        isContestParticipant = !!contest?.bots?.some((bot) => bot.userId === actor.id);
+      }
+      if (object.userId === actor.id || isMatchParticipant || isContestParticipant) {
         if (action === Action.READ && field === "id") return true;
         if (action === Action.READ && field === "user") return true;
         if (action === Action.READ && field === "game") return true;
