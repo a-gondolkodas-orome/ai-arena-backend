@@ -62,8 +62,10 @@ export class ContestRepository extends MongodbRepository<
     const dateErrors = [];
     try {
       new Date(contest.date);
-    } catch (error) {
-      dateErrors.push("Contest date invalid: " + error.message);
+    } catch (error: unknown) {
+      dateErrors.push(
+        `Contest date invalid: ${error instanceof Error ? error.message : "unknown exception"}`,
+      );
     }
     if (nameErrors.length || gameIdErrors.length || dateErrors.length) {
       throw new ValidationError({

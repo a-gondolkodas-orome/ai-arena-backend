@@ -112,9 +112,9 @@ export class Users {
 }
 
 export const UserResponse = createAuthErrorUnionType("UserResponse", [User], (value: unknown) =>
-  (value as GqlValue).__typename === "User" ? User : undefined,
+  (value as GqlValue).__typename === "User" ? "User" : undefined,
 );
 
 export const UsersResponse = createAuthErrorUnionType("UsersResponse", [Users], (value: unknown) =>
-  (value as GqlValue).__typename === "Users" ? Users : undefined,
+  (value as GqlValue).__typename === "Users" ? "Users" : undefined,
 );

@@ -52,9 +52,9 @@ export class MatchRepository extends MongodbRepository<
     const botIdErrors = [];
     if (map) {
       if (match.botIds.length < map.playerCount.min)
-        botIdErrors.push("Not enough bot specified. Min: " + map.playerCount.min);
+        botIdErrors.push(`Not enough bot specified. Min: ${map.playerCount.min}`);
       if (match.botIds.length > map.playerCount.max)
-        botIdErrors.push("Too many bots specified. Max: " + map.playerCount.max);
+        botIdErrors.push(`Too many bots specified. Max: ${map.playerCount.max}`);
     }
     for (const botId of match.botIds) {
       const bot = await (await this.getBotRepository()).findOne({ where: { id: botId } });

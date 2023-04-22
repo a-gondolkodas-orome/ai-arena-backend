@@ -5,9 +5,9 @@ import { GqlValue } from "../common";
 
 function resolveAuthErrorType(value: unknown) {
   if ((value as GqlValue).__typename === "GraphqlAuthenticationError")
-    return GraphqlAuthenticationError;
+    return "GraphqlAuthenticationError";
   if ((value as GqlValue).__typename === "GraphqlAuthorizationError")
-    return GraphqlAuthorizationError;
+    return "GraphqlAuthorizationError";
   return undefined;
 }
 
@@ -45,8 +45,9 @@ export async function handleAuthErrors<T>(getResponse: () => T | Promise<T>) {
 export function createAuthErrorUnionType<C extends ClassType[]>(
   name: string,
   types: C,
-  resolveType: ReturnType<typeof createUnionType<C>>["resolveType"],
+  resolveType: (value: unknown) => string | undefined,
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return createUnionType({
     name: name,
     types: () => [...types, GraphqlAuthenticationError, GraphqlAuthorizationError] as const,
@@ -100,9 +101,9 @@ export const RegistrationResponse = createAuthErrorUnionType(
   [RegistrationSuccess, RegistrationError],
   (value: unknown) =>
     (value as GqlValue).__typename === "RegistrationSuccess"
-      ? RegistrationSuccess
+      ? "RegistrationSuccess"
       : (value as GqlValue).__typename === "RegistrationError"
-      ? RegistrationError
+      ? "RegistrationError"
       : undefined,
 );
 
@@ -125,7 +126,7 @@ export const LoginResponse = createAuthErrorUnionType(
   "LoginResponse",
   [LoginSuccess],
   (value: unknown) =>
-    (value as GqlValue).__typename === "LoginSuccess" ? LoginSuccess : undefined,
+    (value as GqlValue).__typename === "LoginSuccess" ? "LoginSuccess" : undefined,
 );
 
 export const AuthError = createUnionType({

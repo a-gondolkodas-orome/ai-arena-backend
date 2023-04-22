@@ -24,9 +24,9 @@ export function assertValue<T>(value: T): asserts value is Exclude<T, null | und
 }
 
 export function catchWithInfo(promise: Promise<unknown>, filename: string, location: string) {
-  promise.catch((error) => {
+  promise.catch((error: unknown) => {
     throw new AssertException({
-      message: error.message(),
+      message: error instanceof Error ? error.message : "unknown exception",
       values: { filename, location },
     });
   });

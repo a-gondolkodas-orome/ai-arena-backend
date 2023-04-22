@@ -6,6 +6,7 @@ import { setInterval } from "timers";
 import { Time } from "../utils";
 import { BotService } from "../services/bot.service";
 import { MatchService } from "../services/match.service";
+import { Actor } from "../services/authorization.service";
 
 export class SseController {
   constructor(
@@ -18,11 +19,12 @@ export class SseController {
     @inject(RestBindings.Http.REQUEST) request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ) {
-    if (!request.actor) {
+    const actor = request.actor as Actor; // stupid eslint
+    if (!actor) {
       response.sendStatus(HttpStatusCode.HTTP_401_UNAUTHORIZED);
       return;
     }
-    const userId = request.actor.id;
+    const userId = actor.id;
     response.status(HttpStatusCode.HTTP_200_OK);
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");

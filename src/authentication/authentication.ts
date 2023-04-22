@@ -15,7 +15,7 @@ export async function authenticateRequest(
     if (error instanceof HttpErrors.Unauthorized) return null;
     throw error;
   }
-  return !(result instanceof RedirectRoute) && result?.id
+  return !(result instanceof RedirectRoute) && result?.id && typeof result.id === "string"
     ? userRepository.findOne({
         where: { id: result.id },
       })

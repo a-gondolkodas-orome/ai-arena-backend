@@ -170,7 +170,7 @@ export class MatchService {
       await this.botRepository.updateById(botId, {
         submitStatus: {
           stage: BotSubmitStage.CHECK_SUCCESS,
-          log: (bot.submitStatus?.log ?? "") + buildLog,
+          log: (bot.submitStatus?.log ?? "") + (buildLog ?? ""),
         },
       });
     } catch (error: unknown) {

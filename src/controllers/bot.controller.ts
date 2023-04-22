@@ -12,7 +12,7 @@ import { inject, intercept, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
 import { HttpStatusCode } from "../errors";
 import { BotSubmitStage } from "../models/bot";
-import { Action, AuthorizationService } from "../services/authorization.service";
+import { Action, Actor, AuthorizationService } from "../services/authorization.service";
 import { BotService } from "../services/bot.service";
 import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
@@ -54,14 +54,15 @@ export class BotController {
     @param.path.string("token") token: string,
     @requestBody.file() request: Request,
   ) {
-    if (!request.actor) {
+    const actor = request.actor as Actor; // stupid eslint
+    if (!actor) {
       this.response.status(HttpStatusCode.HTTP_401_UNAUTHORIZED);
       return;
     }
     const tokenData = await this.botService.verifyBotSourceUploadToken(token);
     const bot = await this.botRepository.findById(tokenData.bot.id);
-    await this.authorizationService.authorize(request.actor, Action.UPDATE, bot, "source");
-    const userId = request.actor.id;
+    await this.authorizationService.authorize(actor, Action.UPDATE, bot, "source");
+    const userId = actor.id;
     const handleUploadError = async (message: string) => {
       this.response.statusMessage = message;
       this.response.status(HttpStatusCode.HTTP_400_BAD_REQUEST).send();

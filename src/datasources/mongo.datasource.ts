@@ -3,6 +3,7 @@ import { juggler } from "@loopback/repository";
 
 const config = {
   name: "mongo",
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   connector: require("loopback-connector-mongodb"), // see https://github.com/loopbackio/loopback-datasource-juggler/issues/1866
   url:
     process.env.NODE_ENV === "production"

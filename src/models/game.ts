@@ -158,7 +158,7 @@ export class GameInput {
 }
 
 export const GameResponse = createAuthErrorUnionType("GameResponse", [Game], (value: unknown) =>
-  (value as GqlValue).__typename === "Game" ? Game : undefined,
+  (value as GqlValue).__typename === "Game" ? "Game" : undefined,
 );
 
 @objectType()
@@ -168,5 +168,5 @@ export class Games {
 }
 
 export const GamesResponse = createAuthErrorUnionType("GamesResponse", [Games], (value: unknown) =>
-  (value as GqlValue).__typename === "Games" ? Games : undefined,
+  (value as GqlValue).__typename === "Games" ? "Games" : undefined,
 );

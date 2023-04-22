@@ -343,7 +343,7 @@ export class ContestInput {
 export const ContestResponse = createAuthErrorUnionType(
   "ContestResponse",
   [Contest],
-  (value: unknown) => ((value as GqlValue).__typename === "Contest" ? Contest : undefined),
+  (value: unknown) => ((value as GqlValue).__typename === "Contest" ? "Contest" : undefined),
 );
 
 @objectType()
@@ -371,7 +371,7 @@ export class CreateContestError extends GraphqlError {
 export const ContestsResponse = createAuthErrorUnionType(
   "ContestsResponse",
   [Contests],
-  (value: unknown) => ((value as GqlValue).__typename === "Contests" ? Contests : undefined),
+  (value: unknown) => ((value as GqlValue).__typename === "Contests" ? "Contests" : undefined),
 );
 
 export const CreateContestResponse = createAuthErrorUnionType(
@@ -379,9 +379,9 @@ export const CreateContestResponse = createAuthErrorUnionType(
   [Contest, CreateContestError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
-      ? Contest
+      ? "Contest"
       : (value as GqlValue).__typename === "CreateContestError"
-      ? CreateContestError
+      ? "CreateContestError"
       : undefined,
 );
 
@@ -412,9 +412,9 @@ export const RegisterToContestResponse = createAuthErrorUnionType(
   [Contest, RegisterToContestError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
-      ? Contest
+      ? "Contest"
       : (value as GqlValue).__typename === "RegisterToContestError"
-      ? RegisterToContestError
+      ? "RegisterToContestError"
       : undefined,
 );
 
@@ -426,9 +426,9 @@ export const UnregisterFromContestResponse = createAuthErrorUnionType(
   [Contest, ContestNotFoundError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
-      ? Contest
+      ? "Contest"
       : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? ContestNotFoundError
+      ? "ContestNotFoundError"
       : undefined,
 );
 
@@ -445,11 +445,11 @@ export const UpdateContestStatusResponse = createAuthErrorUnionType(
   [Contest, ContestNotFoundError, UpdateContestStatusError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
-      ? Contest
+      ? "Contest"
       : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? ContestNotFoundError
+      ? "ContestNotFoundError"
       : (value as GqlValue).__typename === "UpdateContestStatusError"
-      ? UpdateContestStatusError
+      ? "UpdateContestStatusError"
       : undefined,
 );
 
@@ -464,10 +464,10 @@ export const StartContestResponse = createAuthErrorUnionType(
   [Contest, ContestNotFoundError, StartContestError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
-      ? Contest
+      ? "Contest"
       : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? ContestNotFoundError
+      ? "ContestNotFoundError"
       : (value as GqlValue).__typename === "StartContestError"
-      ? StartContestError
+      ? "StartContestError"
       : undefined,
 );

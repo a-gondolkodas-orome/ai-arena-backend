@@ -36,8 +36,12 @@ export class JwtService extends JWTService {
   ) {
     try {
       return decode(codec, await verifyAsync(token, this.secret, options));
-    } catch (error) {
-      throw new AuthorizationError({ message: error.message });
+    } catch (error: unknown) {
+      throw new AuthorizationError({
+        message: `verifyUniversalToken: failed to decode token - ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      });
     }
   }
 }

@@ -205,9 +205,9 @@ export const CreateBotResponse = createAuthErrorUnionType(
   [BotWithUploadLink, CreateBotError],
   (value: unknown) =>
     (value as GqlValue).__typename === "BotWithUploadLink"
-      ? BotWithUploadLink
+      ? "BotWithUploadLink"
       : (value as GqlValue).__typename === "CreateBotError"
-      ? CreateBotError
+      ? "CreateBotError"
       : undefined,
 );
 
@@ -218,9 +218,9 @@ export class Bots {
 }
 
 export const BotResponse = createAuthErrorUnionType("BotResponse", [Bot], (value: unknown) =>
-  (value as GqlValue).__typename === "Bot" ? Bot : undefined,
+  (value as GqlValue).__typename === "Bot" ? "Bot" : undefined,
 );
 
 export const BotsResponse = createAuthErrorUnionType("BotsResponse", [Bots], (value: unknown) =>
-  (value as GqlValue).__typename === "Bots" ? Bots : undefined,
+  (value as GqlValue).__typename === "Bots" ? "Bots" : undefined,
 );

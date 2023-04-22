@@ -258,9 +258,9 @@ export const CreateMatchResponse = createAuthErrorUnionType(
   [Match, CreateMatchError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Match"
-      ? Match
+      ? "Match"
       : (value as GqlValue).__typename === "CreateMatchError"
-      ? CreateMatchError
+      ? "CreateMatchError"
       : undefined,
 );
 
@@ -273,9 +273,9 @@ export class Matches {
 export const MatchesResponse = createAuthErrorUnionType(
   "MatchesResponse",
   [Matches],
-  (value: unknown) => ((value as GqlValue).__typename === "Matches" ? Matches : undefined),
+  (value: unknown) => ((value as GqlValue).__typename === "Matches" ? "Matches" : undefined),
 );
 
 export const MatchResponse = createAuthErrorUnionType("MatchResponse", [Match], (value: unknown) =>
-  (value as GqlValue).__typename === "Match" ? Match : undefined,
+  (value as GqlValue).__typename === "Match" ? "Match" : undefined,
 );
