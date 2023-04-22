@@ -9,7 +9,7 @@ import { ValidationError } from "../errors";
 import { BotRepository } from "./bot.repository";
 import { User } from "../models/user";
 import { MongodbRepository } from "./mongodb.repository";
-import { Bot } from "../models/bot";
+import { Bot, BotSubmitStage } from "../models/bot";
 import { Game } from "../models/game";
 import { UserRepository } from "./user.repository";
 
@@ -59,6 +59,8 @@ export class MatchRepository extends MongodbRepository<
     for (const botId of match.botIds) {
       const bot = await (await this.getBotRepository()).findOne({ where: { id: botId } });
       if (!bot) botIdErrors.push(`Bot not found (${botId}).`);
+      else if (bot.submitStatus.stage !== BotSubmitStage.CHECK_SUCCESS)
+        botIdErrors.push(`Bot ${botId} can not be executed. Check failed.`);
     }
     if (gameIdErrors.length || mapNameErrors.length || botIdErrors.length) {
       throw new ValidationError({

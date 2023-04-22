@@ -3,7 +3,7 @@ import { belongsTo, Entity, model, property, referencesMany } from "@loopback/re
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { Game, GameWithRelations } from "./game";
 import { User } from "./user";
-import { Bot, BotWithRelations } from "./bot";
+import { Bot, BotSubmitStage, BotWithRelations } from "./bot";
 import { Match, MatchWithRelations } from "./match";
 import { registerEnumType } from "type-graphql";
 import { GqlValue } from "../common";
@@ -22,6 +22,7 @@ import { ContestService } from "../services/contest.service";
 import { ContestRepository } from "../repositories/contest.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { MatchService } from "../services/match.service";
+import { assertValue } from "../utils";
 
 export enum ContestStatus {
   OPEN = "OPEN",
@@ -85,7 +86,9 @@ export class Contest extends Entity {
     const bot = await botRepository.findOne({ where: { id: botId } });
     if (!contest) contestIdErrors.push("Contest not found.");
     if (!bot) botIdErrors.push("Bot not found.");
-    if (!contest || !bot) {
+    else if (bot.submitStatus.stage !== BotSubmitStage.CHECK_SUCCESS)
+      botIdErrors.push(`Bot ${botId} can not be executed. Check failed.`);
+    if (contestIdErrors.length || botIdErrors.length) {
       throw new ValidationError({
         fieldErrors: {
           ...(contestIdErrors.length && { contestId: contestIdErrors }),
@@ -93,6 +96,7 @@ export class Contest extends Entity {
         },
       });
     }
+    assertValue(contest);
     await authorizationService.authorize(actor, Action.CONTEST_REGISTER, contest, undefined, bot);
     this.removeUserBotFromContest(actor, contest);
     contest.botIds.push(botId);
