@@ -2,7 +2,7 @@ import { field, ID, objectType } from "@loopback/graphql";
 import { Entity, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType, Credentials, RegistrationInput } from "./auth";
 import { registerEnumType } from "type-graphql";
-import { GqlValue } from "../utils";
+import { GqlValue } from "../common";
 import {
   Action,
   Actor,

@@ -1,7 +1,7 @@
 import { ClassType, field, inputType, InterfaceType, objectType } from "@loopback/graphql";
 import { createUnionType } from "type-graphql";
 import { AuthenticationError, AuthorizationError } from "../errors";
-import { GqlValue } from "../utils";
+import { GqlValue } from "../common";
 
 function resolveAuthErrorType(value: unknown) {
   if ((value as GqlValue).__typename === "GraphqlAuthenticationError")

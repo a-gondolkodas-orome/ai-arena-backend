@@ -265,6 +265,11 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return contest.getDateAuthorized(this.actor, this.authorizationService);
   }
 
+  @fieldResolver()
+  async mapNames(@root() contest: Contest) {
+    return contest.getMapNamesAuthorized(this.actor, this.authorizationService);
+  }
+
   @fieldResolver(() => [Bot])
   async bots(@root() contest: Contest) {
     return contest.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);

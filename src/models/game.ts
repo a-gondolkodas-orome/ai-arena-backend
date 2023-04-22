@@ -2,7 +2,7 @@ import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { Entity, Model, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
 import { File } from "./base";
-import { GqlValue } from "../utils";
+import { GqlValue } from "../common";
 import { fromByteArray } from "base64-js";
 import {
   Action,

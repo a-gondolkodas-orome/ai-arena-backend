@@ -6,7 +6,7 @@ import { User } from "./user";
 import { Bot, BotWithRelations } from "./bot";
 import { Match, MatchWithRelations } from "./match";
 import { registerEnumType } from "type-graphql";
-import { GqlValue } from "../utils";
+import { GqlValue } from "../common";
 import { UserWithRelations } from "@loopback/authentication-jwt";
 import { AssertException, ValidationError } from "../errors";
 import {

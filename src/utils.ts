@@ -47,8 +47,6 @@ export function convertObjectIdsToString<T extends object>(entity: T) {
   return entity;
 }
 
-export type GqlValue = { __typename: string };
-
 export function exec(command: string, options: ExecOptions = {}) {
   return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
     child_process.exec(command, options, (error, stdout, stderr) => {

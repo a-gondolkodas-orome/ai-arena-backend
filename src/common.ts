@@ -23,3 +23,5 @@ export const matchConfigCodec = t.type({
 });
 
 export const scoresCodec = t.record(t.string, t.number);
+
+export type GqlValue = { __typename: string };

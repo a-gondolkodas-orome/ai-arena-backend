@@ -3,7 +3,7 @@ import { belongsTo, Entity, Model, model, property, referencesMany } from "@loop
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
 import { Game, GameWithRelations } from "./game";
-import { GqlValue } from "../utils";
+import { GqlValue } from "../common";
 import { Bot, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
