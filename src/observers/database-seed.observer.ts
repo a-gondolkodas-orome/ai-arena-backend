@@ -54,24 +54,29 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
   protected static readonly GAME_CONFIG_FILE_NAME = "ai-arena.game.config.json";
 
   protected static readonly playerCountCodec = t.type({ min: t.number, max: t.number });
-  protected static readonly gameConfigCodec = t.type({
-    name: t.string,
-    shortDescription: t.string,
-    picturePath: t.string,
-    fullDescriptionPath: t.string,
-    playerCount: DatabaseSeedObserver.playerCountCodec,
-    maps: t.array(
-      t.type({
-        name: t.string,
-        path: t.string,
-        playerCount: DatabaseSeedObserver.playerCountCodec,
+  protected static readonly gameConfigCodec = t.intersection([
+    t.type({
+      name: t.string,
+      shortDescription: t.string,
+      picturePath: t.string,
+      fullDescriptionPath: t.string,
+      playerCount: DatabaseSeedObserver.playerCountCodec,
+      maps: t.array(
+        t.type({
+          name: t.string,
+          path: t.string,
+          playerCount: DatabaseSeedObserver.playerCountCodec,
+        }),
+      ),
+      packageServer: t.type({
+        command: t.string,
+        result: t.string,
       }),
-    ),
-    packageServer: t.type({
-      command: t.string,
-      result: t.string,
     }),
-  });
+    t.partial({
+      disabled: t.boolean,
+    }),
+  ]);
 
   protected async loadGames() {
     const gamesDirPath = path.resolve("games");
@@ -84,6 +89,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           await fsp.readFile(path.join(gamePath, DatabaseSeedObserver.GAME_CONFIG_FILE_NAME))
         ).toString(),
       );
+      if (gameConfig.disabled) continue;
       const maps = [];
       for (const map of gameConfig.maps) {
         maps.push({
