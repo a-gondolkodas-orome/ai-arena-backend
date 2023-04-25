@@ -86,8 +86,12 @@ export class Contest extends Entity {
     const bot = await botRepository.findOne({ where: { id: botId } });
     if (!contest) contestIdErrors.push("Contest not found.");
     if (!bot) botIdErrors.push("Bot not found.");
-    else if (bot.submitStatus.stage !== BotSubmitStage.CHECK_SUCCESS)
-      botIdErrors.push(`Bot ${botId} can not be executed. Check failed.`);
+    else {
+      if (bot.submitStatus.stage !== BotSubmitStage.CHECK_SUCCESS)
+        botIdErrors.push(`Bot ${botId} can not be executed. Check failed.`);
+      if (bot.userId !== actor.id)
+        botIdErrors.push(`Contest registration is allowed only with own bots.`);
+    }
     if (contestIdErrors.length || botIdErrors.length) {
       throw new ValidationError({
         fieldErrors: {

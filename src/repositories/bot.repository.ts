@@ -2,7 +2,7 @@ import { Getter, inject } from "@loopback/core";
 import { BelongsToAccessor, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Bot, BotInput, BotRelations, BotSubmitStage } from "../models/bot";
-import { Options } from "@loopback/repository/src/common-types";
+import { DataObject, Options } from "@loopback/repository/src/common-types";
 import { convertObjectIdsToString } from "../utils";
 import { GameRepository } from "./game.repository";
 import { ValidationError } from "../errors";
@@ -50,7 +50,7 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
     }
 
     return convertObjectIdsToString(
-      await this.create(
+      await super.create(
         {
           ...bot,
           userId: user.id,
@@ -61,5 +61,9 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
         options,
       ),
     );
+  }
+
+  async create(entity: DataObject<Bot>, options?: Options) {
+    return convertObjectIdsToString(await super.create(entity));
   }
 }

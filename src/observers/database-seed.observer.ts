@@ -1,8 +1,6 @@
-import { CoreBindings, inject, LifeCycleObserver } from "@loopback/core";
-import { DefaultCrudRepository } from "@loopback/repository";
+import { CoreBindings, inject, LifeCycleObserver, service } from "@loopback/core";
+import { repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
-import { Game } from "../models/game";
-import { User } from "../models/user";
 import path from "path";
 import fsp from "fs/promises";
 import { promisify } from "util";
@@ -14,6 +12,11 @@ import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
 import { MatchService } from "../services/match.service";
 import { AiArenaBackendApplication } from "../application";
 import fs from "fs";
+import { BotSubmitStage } from "../models/bot";
+import { BotRepository } from "../repositories/bot.repository";
+import { UserRepository } from "../repositories/user.repository";
+import { GameRepository } from "../repositories/game.repository";
+import { UserService } from "../services/user.service";
 
 const exec = promisify(child_process.exec);
 
@@ -23,25 +26,24 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
     dataSource: MongoDataSource,
     @inject(CoreBindings.APPLICATION_INSTANCE)
     protected app: AiArenaBackendApplication,
-  ) {
-    this.userRepo = new DefaultCrudRepository(User, dataSource);
-    this.gameRepo = new DefaultCrudRepository(Game, dataSource);
-  }
-
-  protected userRepo: DefaultCrudRepository<User, typeof User.prototype.id>;
-  protected gameRepo: DefaultCrudRepository<Game, typeof Game.prototype.id>;
+    @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(GameRepository) protected gameRepository: GameRepository,
+    @repository(BotRepository) protected botRepository: BotRepository,
+    @service() protected userService: UserService,
+    @service() protected matchService: MatchService,
+  ) {}
 
   async start(): Promise<void> {
-    if ((await this.userRepo.count({ username: EXECUTOR_SYSTEM })).count === 0) {
-      await this.userRepo.create({
+    if ((await this.userRepository.count({ username: EXECUTOR_SYSTEM })).count === 0) {
+      await this.userRepository.create({
         username: EXECUTOR_SYSTEM,
         email: "",
         password: "",
         roles: [Role.ADMIN],
       });
     }
-    if ((await this.userRepo.count({ username: "admin" })).count === 0) {
-      await this.userRepo.create({
+    if ((await this.userRepository.count({ username: "admin" })).count === 0) {
+      await this.userRepository.create({
         username: "admin",
         email: "admin@ai-arena.com",
         password: "admin",
@@ -68,6 +70,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           playerCount: DatabaseSeedObserver.playerCountCodec,
         }),
       ),
+      bots: t.array(t.type({ name: t.string, path: t.string })),
       packageServer: t.type({
         command: t.string,
         result: t.string,
@@ -90,6 +93,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
         ).toString(),
       );
       if (gameConfig.disabled) continue;
+      const gameId = md5(gameConfig.name).substring(0, 24);
       const maps = [];
       for (const map of gameConfig.maps) {
         maps.push({
@@ -98,12 +102,30 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           file: await fsp.readFile(path.join(gamePath, map.path), { encoding: "utf8" }),
         });
       }
+      const systemUser = await this.userService.getSystemUser();
+      await this.botRepository.deleteAll({ gameId, userId: systemUser.id });
+      for (const botConfig of gameConfig.bots) {
+        const bot = await this.botRepository.create({
+          id: md5(gameConfig.name + botConfig.name).substring(0, 24),
+          gameId,
+          name: botConfig.name,
+          userId: systemUser.id,
+          submitStatus: { stage: BotSubmitStage.CHECK_SUCCESS },
+          versionNumber: 1,
+          deleted: false,
+          source: {
+            fileName: path.basename(botConfig.path),
+            content: await fsp.readFile(path.join(gamePath, botConfig.path)),
+          },
+        });
+        await this.matchService.checkBot(bot.id);
+      }
       const publicFolderPath = path.join(gamePath, "public");
       if (fs.existsSync(publicFolderPath))
         this.app.static(`/public/games/${file.name}`, publicFolderPath);
       await exec(gameConfig.packageServer.command, { cwd: gamePath });
       const game = {
-        id: md5(gameConfig.name).substring(0, 24),
+        id: gameId,
         name: gameConfig.name,
         shortDescription: gameConfig.shortDescription,
         pictureBuffer: await fsp.readFile(path.join(gamePath, gameConfig.picturePath)),
@@ -117,12 +139,11 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           fileName: path.basename(gameConfig.packageServer.result),
         },
       };
-
-      if (await this.gameRepo.exists(game.id)) {
+      if (await this.gameRepository.exists(game.id)) {
         await fsp.rm(MatchService.getGamePath(game.id), { recursive: true, force: true });
-        await this.gameRepo.updateById(game.id, game);
+        await this.gameRepository.updateById(game.id, game);
       } else {
-        await this.gameRepo.create(game);
+        await this.gameRepository.create(game);
       }
     }
   }

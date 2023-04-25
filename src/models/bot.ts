@@ -16,6 +16,7 @@ import { BotService } from "../services/bot.service";
 import { GameRepository } from "../repositories/game.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { UserService } from "../services/user.service";
 
 export enum BotSubmitStage {
   REGISTERED = "REGISTERED",
@@ -57,12 +58,22 @@ export class Bot extends Entity {
   static async getBots(
     actor: User,
     gameId: string,
+    includeTestBots: boolean,
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
+    userService: UserService,
   ) {
     await authorizationService.authorize(actor, Action.READ, ResourceCollection.BOTS);
-    return botRepository.find({
-      where: { gameId, userId: actor.id, deleted: { neq: true } },
+    const systemUser = await userService.getSystemUser();
+    const userIds = includeTestBots ? [actor.id, systemUser.id] : [actor.id];
+    return (
+      await botRepository.find({
+        where: { gameId, userId: { inq: userIds }, deleted: { neq: true } },
+      })
+    ).sort((a, b) => {
+      if ((a.userId === systemUser.id) === (b.userId === systemUser.id))
+        return a.name.localeCompare(b.name);
+      return a.userId === systemUser.id ? 1 : -1;
     });
   }
 

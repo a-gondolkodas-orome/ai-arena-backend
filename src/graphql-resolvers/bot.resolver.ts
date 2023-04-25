@@ -23,12 +23,14 @@ import { BotService } from "../services/bot.service";
 import { GameRepository } from "../repositories/game.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { UserService } from "../services/user.service";
 
 @resolver(() => Bot)
 export class BotResolver extends BaseResolver implements ResolverInterface<Bot> {
   constructor(
     @service() protected authorizationService: AuthorizationService,
     @service() protected botService: BotService,
+    @service() protected userService: UserService,
     @repository(BotRepository) protected botRepository: BotRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
     @repository(GameRepository) protected gameRepository: GameRepository,
@@ -66,10 +68,20 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   }
 
   @query(() => BotsResponse)
-  async getBots(@arg("gameId") gameId: string): Promise<typeof BotsResponse> {
+  async getBots(
+    @arg("gameId") gameId: string,
+    @arg("includeTestBots") includeTestBots: boolean,
+  ): Promise<typeof BotsResponse> {
     return handleAuthErrors(async () => ({
       __typename: "Bots",
-      bots: await Bot.getBots(this.actor, gameId, this.authorizationService, this.botRepository),
+      bots: await Bot.getBots(
+        this.actor,
+        gameId,
+        includeTestBots,
+        this.authorizationService,
+        this.botRepository,
+        this.userService,
+      ),
     }));
   }
 

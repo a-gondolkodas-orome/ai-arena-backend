@@ -1,4 +1,4 @@
-import { User } from "../models/user";
+import { User, UserWithRelations } from "../models/user";
 import { Match, MatchInput, MatchWithRelations } from "../models/match";
 import { Bot, BotInput, BotWithRelations } from "../models/bot";
 import { RegistrationInput } from "../models/auth";
@@ -7,9 +7,9 @@ import { AuthenticationError, AuthorizationError } from "../errors";
 import { Contest, ContestInput, ContestWithRelations } from "../models/contest";
 import { Game, GameInput, GameWithRelations } from "../models/game";
 import { BindingScope, injectable } from "@loopback/core";
-import { UserWithRelations } from "@loopback/authentication-jwt";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestRepository } from "../repositories/contest.repository";
+import { UserRepository } from "../repositories/user.repository";
 
 export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
 
@@ -64,6 +64,8 @@ export enum Role {
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class AuthorizationService {
+  constructor(@repository("UserRepository") protected userRepository: UserRepository) {}
+
   async authorize<T extends ResourceObject>(
     actor: Actor,
     action: Action,
@@ -129,7 +131,7 @@ export class AuthorizationService {
             if (
               action === Action.CONTEST_REGISTER &&
               value instanceof Bot &&
-              (await this.canUseBots(actor, [value.id]))
+              (await this.canUseBots(actor, [value.id], false))
             )
               return true;
             if (action === Action.CONTEST_UNREGISTER) return true;
@@ -155,7 +157,10 @@ export class AuthorizationService {
       if (action === Action.READ && field === "roles") return true;
       if (action === Action.DELETE) return true;
     }
-    if (object instanceof Bot && actor.id === object.userId) {
+    if (
+      object instanceof Bot &&
+      (actor.id === object.userId || object.userId === (await this.getSystemUser()).id)
+    ) {
       if (action === Action.READ && field === "submitStatus") return true;
       if (action === Action.READ && field === "source") return true;
       if (action === Action.UPDATE && field === "source") return true;
@@ -164,7 +169,7 @@ export class AuthorizationService {
     if (
       action === Action.CREATE &&
       object instanceof MatchInput &&
-      (await this.canUseBots(actor, object.botIds))
+      (await this.canUseBots(actor, object.botIds, true))
     )
       return true;
     if (object instanceof Match) {
@@ -199,9 +204,21 @@ export class AuthorizationService {
     return false;
   }
 
-  protected async canUseBots(actor: User, botIds: string[]) {
+  protected async canUseBots(actor: User, botIds: string[], allowTestBots: boolean) {
     botIds = Array.from(new Set(botIds));
     const bots = await this.botRepository.find({ where: { id: { inq: botIds } } });
-    return bots.length === botIds.length && bots.every((bot) => bot.userId === actor.id); // TODO handle system bots
+    const systemUser = await this.getSystemUser();
+    return (
+      bots.length === botIds.length &&
+      bots.every(
+        (bot) => bot.userId === actor.id || (allowTestBots && bot.userId === systemUser.id),
+      )
+    );
+  }
+
+  protected _systemUser?: User;
+  protected async getSystemUser() {
+    if (this._systemUser) return this._systemUser;
+    return (this._systemUser = await this.userRepository._getSystemUser());
   }
 }
