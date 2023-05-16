@@ -26,7 +26,7 @@ import { MatchesResponse } from "../models/match";
 import { User } from "../models/user";
 import { Game } from "../models/game";
 import { AuthorizationService } from "../services/authorization.service";
-import { Bot } from "../models/bot";
+import { BotOrDeleted } from "../models/bot";
 import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
@@ -136,7 +136,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     return match.getMapNameAuthorized(this.actor, this.authorizationService);
   }
 
-  @fieldResolver(() => [Bot], { nullable: "items" })
+  @fieldResolver(() => [BotOrDeleted])
   async bots(@root() match: Match) {
     return match.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
   }

@@ -3,7 +3,7 @@ import { belongsTo, Entity, model, property, referencesMany } from "@loopback/re
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { Game, GameWithRelations } from "./game";
 import { User } from "./user";
-import { Bot, BotSubmitStage, BotWithRelations } from "./bot";
+import { Bot, BotOrDeleted, BotSubmitStage, BotWithRelations } from "./bot";
 import { Match, MatchWithRelations } from "./match";
 import { registerEnumType } from "type-graphql";
 import { GqlValue } from "../common";
@@ -102,7 +102,7 @@ export class Contest extends Entity {
     }
     assertValue(contest);
     await authorizationService.authorize(actor, Action.CONTEST_REGISTER, contest, undefined, bot);
-    this.removeUserBotFromContest(actor, contest);
+    await this.removeUserBotFromContest(actor, contest, botRepository);
     contest.botIds.push(botId);
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
     delete (contest as Contest & Partial<ContestRelations>).bots;
@@ -115,6 +115,7 @@ export class Contest extends Entity {
     contestId: string,
     authorizationService: AuthorizationService,
     contestRepository: ContestRepository,
+    botRepository: BotRepository,
   ) {
     const contest = await contestRepository.findOne({
       where: { id: contestId },
@@ -126,7 +127,7 @@ export class Contest extends Entity {
       );
     }
     await authorizationService.authorize(actor, Action.CONTEST_UNREGISTER, contest);
-    if (!this.removeUserBotFromContest(actor, contest)) {
+    if (!(await this.removeUserBotFromContest(actor, contest, botRepository))) {
       throw new ValidationError({ fieldErrors: { contestId: ["User not registered."] } });
     }
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
@@ -194,7 +195,11 @@ export class Contest extends Entity {
     }
   }
 
-  protected static removeUserBotFromContest(actor: User, contest: ContestWithRelations) {
+  protected static async removeUserBotFromContest(
+    actor: User,
+    contest: ContestWithRelations,
+    botRepository: BotRepository,
+  ) {
     const existingBot = contest.bots.find((registeredBot) => registeredBot.userId === actor.id);
     if (existingBot) {
       const existingBotIdx = contest.botIds.findIndex(
@@ -206,6 +211,7 @@ export class Contest extends Entity {
           values: { existingBotId: existingBot.id },
         });
       contest.botIds.splice(existingBotIdx, 1);
+      if (existingBot.deleted) await botRepository.deleteById(existingBot.id);
     }
     return !!existingBot;
   }
@@ -286,7 +292,12 @@ export class Contest extends Entity {
         bot,
       ]),
     );
-    return this.botIds.map((botId) => botsById.get(botId));
+    return this.botIds.map<typeof BotOrDeleted>((botId) => {
+      const bot = botsById.get(botId);
+      return bot
+        ? Object.assign(bot, { __typename: "Bot" })
+        : { __typename: "DeletedBot", id: botId };
+    });
   }
 
   @referencesMany(() => Match, { name: "matches" })

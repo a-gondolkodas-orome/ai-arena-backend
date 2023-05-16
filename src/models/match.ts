@@ -4,7 +4,7 @@ import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
 import { Game, GameWithRelations } from "./game";
 import { GqlValue } from "../common";
-import { Bot, BotWithRelations } from "./bot";
+import { Bot, BotOrDeleted, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
 import {
@@ -109,10 +109,6 @@ export class Match extends Entity {
       });
     await matchService.deleteMatchBuild(id);
     await matchRepository.deleteById(id);
-    const deletedBotIds = new Set(match.bots.filter((bot) => bot.deleted).map((bot) => bot.id));
-    for (const botId of deletedBotIds) {
-      await botService.tryDeleteBot(botId);
-    }
   }
 
   @field(() => ID)
@@ -173,7 +169,12 @@ export class Match extends Entity {
         bot,
       ]),
     );
-    return this.botIds.map((botId) => botsById.get(botId));
+    return this.botIds.map<typeof BotOrDeleted>((botId) => {
+      const bot = botsById.get(botId);
+      return bot
+        ? Object.assign(bot, { __typename: "Bot" })
+        : { __typename: "DeletedBot", id: botId };
+    });
   }
 
   @field()

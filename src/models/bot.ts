@@ -5,7 +5,7 @@ import { User, UserWithRelations } from "./user";
 import { Game, GameWithRelations } from "./game";
 import { GqlValue } from "../common";
 import { File } from "./base";
-import { registerEnumType } from "type-graphql";
+import { createUnionType, registerEnumType } from "type-graphql";
 import {
   Action,
   Actor,
@@ -97,11 +97,7 @@ export class Bot extends Entity {
     await authorizationService.authorize(actor, Action.DELETE, bot);
     await botService.deleteBotBuild(id);
     if (!(await botService.tryDeleteBot(id))) {
-      await botRepository.updateById(id, {
-        deleted: true,
-        submitStatus: undefined,
-        source: undefined,
-      });
+      await botRepository.updateById(id, { deleted: true });
     }
   }
 
@@ -235,3 +231,15 @@ export const BotResponse = createAuthErrorUnionType("BotResponse", [Bot], (value
 export const BotsResponse = createAuthErrorUnionType("BotsResponse", [Bots], (value: unknown) =>
   (value as GqlValue).__typename === "Bots" ? "Bots" : undefined,
 );
+
+@objectType()
+export class DeletedBot {
+  @field(() => ID)
+  id: string;
+}
+
+export const BotOrDeleted = createUnionType({
+  name: "BotOrDeleted",
+  types: () => [Bot, DeletedBot] as const,
+  resolveType: (value: unknown) => (value as GqlValue).__typename,
+});

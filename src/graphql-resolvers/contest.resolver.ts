@@ -29,7 +29,7 @@ import {
 import { AuthorizationError, ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { Game } from "../models/game";
-import { Bot } from "../models/bot";
+import { BotOrDeleted } from "../models/bot";
 import { User } from "../models/user";
 import { Match } from "../models/match";
 import { AuthorizationService } from "../services/authorization.service";
@@ -146,6 +146,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
             contestId,
             this.authorizationService,
             this.contestRepository,
+            this.botRepository,
           ),
           { __typename: "Contest" },
         );
@@ -270,7 +271,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return contest.getMapNamesAuthorized(this.actor, this.authorizationService);
   }
 
-  @fieldResolver(() => [Bot])
+  @fieldResolver(() => [BotOrDeleted])
   async bots(@root() contest: Contest) {
     return contest.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
   }

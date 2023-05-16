@@ -75,10 +75,7 @@ export class BotService {
   }
 
   async tryDeleteBot(id: string) {
-    if (
-      (await this.matchRepository.count({ botIds: id as string[] & string })).count ||
-      (await this.contestRepository.count({ botIds: id as string[] & string })).count
-    )
+    if ((await this.contestRepository.count({ botIds: id as string[] & string })).count)
       return false;
     await this.botRepository.deleteById(id);
     return true;
