@@ -161,8 +161,14 @@ export class Bot extends Entity {
     return this.deleted;
   }
 
+  @field()
   @property()
   source?: File;
+
+  async getSourceAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "source");
+    return this.source;
+  }
 
   @property()
   versionNumber: number;
