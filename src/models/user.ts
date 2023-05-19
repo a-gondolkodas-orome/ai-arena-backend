@@ -30,7 +30,7 @@ export class User extends Entity {
     jwtService: TokenService,
   ) {
     await authorizationService.authorize(actor, Action.CREATE, registrationData);
-    const user = await userRepository.validateAndCreate(registrationData);
+    const user = await userRepository.validateAndCreate(registrationData, [Role.USER]);
     const userProfile = userService.convertToUserProfile(user);
     const token = await jwtService.generateToken(userProfile);
     return { user, token };

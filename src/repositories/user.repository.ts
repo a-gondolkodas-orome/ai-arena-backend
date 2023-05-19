@@ -19,7 +19,7 @@ export class UserRepository extends MongodbRepository<
     super(User, dataSource);
   }
 
-  async validateAndCreate(user: RegistrationInput, options?: Options) {
+  async validateAndCreate(user: RegistrationInput, roles: Role[], options?: Options) {
     // TODO use some validation library?
     const usernameErrors = [];
     if (user.username.length === 0) usernameErrors.push("Username must not be empty");
@@ -46,7 +46,7 @@ export class UserRepository extends MongodbRepository<
     }
 
     user.password = await hash(user.password, await genSalt());
-    return this.create({ ...user, roles: [Role.USER] }, options);
+    return this.create({ ...user, roles }, options);
   }
 
   /** Don't use this. If you need the system user, get it from UserService. */

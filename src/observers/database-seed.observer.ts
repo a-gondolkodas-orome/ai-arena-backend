@@ -43,12 +43,16 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       });
     }
     if ((await this.userRepository.count({ username: "admin" })).count === 0) {
-      await this.userRepository.create({
-        username: "admin",
-        email: "admin@ai-arena.com",
-        password: "admin",
-        roles: [Role.ADMIN],
-      });
+      const password = process.env.NODE_ENV === "production" ? process.env.ADMIN_PASSWORD : "4dm1n";
+      if (password)
+        await this.userRepository.validateAndCreate(
+          {
+            username: "admin",
+            email: "admin",
+            password,
+          },
+          [Role.ADMIN],
+        );
     }
     await this.loadGames();
   }
