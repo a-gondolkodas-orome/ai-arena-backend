@@ -296,6 +296,11 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
   }
 
   @fieldResolver()
+  async progress(@root() contest: Contest) {
+    return contest.getProgressAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver()
   async scoreJson(@root() contest: Contest) {
     return contest.getScoreJsonAuthorized(this.actor, this.authorizationService);
   }

@@ -38,6 +38,22 @@ registerEnumType(ContestStatus, {
 
 @objectType()
 @model()
+export class ContestProgress {
+  @field()
+  @property()
+  totalMatchCount: number;
+
+  @field()
+  @property()
+  completedMatchCount: number;
+
+  @field({ nullable: true })
+  @property()
+  timeRemaining?: number;
+}
+
+@objectType()
+@model()
 export class Contest extends Entity {
   static readonly EXCEPTION_CODE__CONTEST_NOT_FOUND = "CONTEST_NOT_FOUND";
 
@@ -319,6 +335,15 @@ export class Contest extends Entity {
   async getStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
     await authorizationService.authorize(actor, Action.READ, this, "status");
     return this.status;
+  }
+
+  @field({ nullable: true })
+  @property()
+  progress?: ContestProgress;
+
+  async getProgressAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "progress");
+    return this.progress;
   }
 
   @field({ nullable: true })

@@ -127,6 +127,7 @@ export class AuthorizationService {
             if (action === Action.READ && field === "mapNames") return true;
             if (action === Action.READ && field === "bots") return true;
             if (action === Action.READ && field === "status") return true;
+            if (action === Action.READ && field === "progress") return true;
             if (action === Action.READ && field === "scoreJson") return true;
             if (
               action === Action.CONTEST_REGISTER &&

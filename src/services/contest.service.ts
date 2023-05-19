@@ -1,6 +1,5 @@
 import { BindingScope, injectable, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import path from "path";
 import EventEmitter from "events";
 import { Contest, ContestStatus } from "../models/contest";
 import { MatchService } from "./match.service";
@@ -11,17 +10,10 @@ import { AssertException } from "../errors";
 import { decodeJson } from "../codec";
 import { scoresCodec } from "../common";
 import { MatchRunStage } from "../models/match";
+import { performance } from "perf_hooks";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class ContestService {
-  static getGamePath(gameId: string) {
-    return path.resolve("container", "games", gameId);
-  }
-
-  static getMatchPath(matchId: string) {
-    return path.resolve("container", "matches", matchId);
-  }
-
   constructor(
     @service() protected userService: UserService,
     @service() protected matchService: MatchService,
@@ -42,6 +34,13 @@ export class ContestService {
     const increaseScore = (botId: string, increment: number) => {
       contestScores.set(botId, (contestScores.get(botId) ?? 0) + increment);
     };
+    contest.progress = {
+      totalMatchCount:
+        (contest.mapNames.length * (contest.botIds.length * (contest.botIds.length - 1))) / 2,
+      completedMatchCount: 0,
+    };
+    await this.contestRepository.update(contest);
+    const startTime = performance.now();
     for (const mapName of contest.mapNames) {
       for (let botIdx1 = 0; botIdx1 < contest.botIds.length; ++botIdx1) {
         for (let botIdx2 = botIdx1 + 1; botIdx2 < contest.botIds.length; ++botIdx2) {
@@ -56,7 +55,13 @@ export class ContestService {
             },
           );
           contest.matchIds.push(match.id);
-          await this.contestRepository.update(contest);
+          const progress = contest.progress;
+          if (!progress) {
+            throw new AssertException({
+              message: "runContest: missing progress",
+              values: { contestId: contest.id },
+            });
+          }
           await this.matchService.runMatch(match);
           match = await this.matchRepository.findById(match.id);
           if (match.runStatus.stage !== MatchRunStage.RUN_SUCCESS) {
@@ -79,6 +84,12 @@ export class ContestService {
           } else {
             increaseScore(botId2, 1);
           }
+          ++progress.completedMatchCount;
+          const avgMatchTime = (performance.now() - startTime) / progress.completedMatchCount;
+          progress.timeRemaining = Math.round(
+            (progress.totalMatchCount - progress.completedMatchCount) * avgMatchTime,
+          );
+          await this.contestRepository.update(contest);
         }
       }
     }

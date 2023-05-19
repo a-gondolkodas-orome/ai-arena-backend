@@ -161,7 +161,7 @@ export class Bot extends Entity {
     return this.deleted;
   }
 
-  @field()
+  @field({ nullable: true })
   @property()
   source?: File;
 

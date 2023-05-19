@@ -130,7 +130,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     return bot.getDeletedAuthorized(this.actor, this.authorizationService);
   }
 
-  @fieldResolver({ nullable: true })
+  @fieldResolver()
   async source(@root() bot: Bot) {
     return bot.getSourceAuthorized(this.actor, this.authorizationService);
   }
