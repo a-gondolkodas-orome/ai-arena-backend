@@ -1,1 +1,3 @@
-../../hooks/prebuild/02-prevent-npm.sh
+#!/bin/bash
+# EB build scripts will not `npm install` if node_modules folder exists
+mkdir -p node_modules

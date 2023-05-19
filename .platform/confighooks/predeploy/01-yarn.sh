@@ -1,1 +1,3 @@
-../../hooks/predeploy/01-yarn.sh
+#!/bin/bash
+corepack enable
+yarn
