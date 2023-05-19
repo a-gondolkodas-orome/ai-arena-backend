@@ -95,6 +95,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
         (
           await fsp.readFile(path.join(gamePath, DatabaseSeedObserver.GAME_CONFIG_FILE_NAME))
         ).toString(),
+        "loading " + gamePath,
       );
       if (gameConfig.disabled) continue;
       const gameId = md5(gameConfig.name).substring(0, 24);
