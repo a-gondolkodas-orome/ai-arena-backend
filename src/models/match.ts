@@ -48,15 +48,6 @@ export class MatchRunStatus extends Model {
 }
 
 @objectType()
-export class MatchResult {
-  @field()
-  log: string;
-
-  @field()
-  scoreJson: string;
-}
-
-@objectType()
 @model()
 export class Match extends Entity {
   static async create(
@@ -186,36 +177,30 @@ export class Match extends Entity {
     return this.runStatus;
   }
 
-  get result() {
-    if (this.runStatus.stage !== MatchRunStage.RUN_SUCCESS) return null;
-    if (!this.log || !this.scoreJson) {
-      throw new AssertException({
-        message: "Match.result: state inconsistent",
-        values: { stage: this.runStatus.stage, log: !!this.log, scoreJson: !!this.scoreJson },
-      });
-    }
-    return {
-      __typename: "MatchResult",
-      log: this.log.file.toString(),
-      scoreJson: this.scoreJson,
-    };
-  }
-
-  async getResultAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "result");
-    return this.result;
+  @field(() => String, { nullable: true })
+  get logString() {
+    return this.log?.file?.toString();
   }
 
   @property()
-  log:
-    | {
-        file: Buffer;
-        fileName: string;
-      }
-    | undefined;
+  log?: {
+    file: Buffer;
+    fileName: string;
+  };
+
+  async getLogStringAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "logString");
+    return this.logString;
+  }
 
   @property()
+  @field({ nullable: true })
   scoreJson?: string;
+
+  async getScoreJsonAuthorized(actor: Actor, authorizationService: AuthorizationService) {
+    await authorizationService.authorize(actor, Action.READ, this, "scoreJson");
+    return this.scoreJson;
+  }
 }
 
 export interface MatchRelations {

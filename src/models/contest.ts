@@ -325,7 +325,7 @@ export class Contest extends Entity {
     matchRepository: MatchRepository,
   ) {
     await authorizationService.authorize(actor, Action.READ, this, "matches");
-    return matchRepository.find({ where: { id: { inq: this.matchIds } } });
+    return matchRepository.find({ where: { id: { inq: this.matchIds } }, fields: { log: false } });
   }
 
   @field(() => ContestStatus)

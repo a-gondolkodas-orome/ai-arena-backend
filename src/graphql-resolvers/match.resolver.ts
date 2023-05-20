@@ -11,13 +11,7 @@ import {
   root,
 } from "@loopback/graphql";
 import { repository } from "@loopback/repository";
-import {
-  Match,
-  MatchInput,
-  MatchResponse,
-  CreateMatchResponse,
-  MatchResult,
-} from "../models/match";
+import { Match, MatchInput, MatchResponse, CreateMatchResponse } from "../models/match";
 import { BaseResolver } from "./base.resolver";
 import { AuthError, handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
@@ -146,8 +140,13 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     return match.getRunStatusAuthorized(this.actor, this.authorizationService);
   }
 
-  @fieldResolver(() => MatchResult, { nullable: true })
-  async result(@root() match: Match) {
-    return match.getResultAuthorized(this.actor, this.authorizationService);
+  @fieldResolver()
+  async logString(@root() match: Match) {
+    return match.getLogStringAuthorized(this.actor, this.authorizationService);
+  }
+
+  @fieldResolver()
+  async scoreJson(@root() match: Match) {
+    return match.getScoreJsonAuthorized(this.actor, this.authorizationService);
   }
 }
