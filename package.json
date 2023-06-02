@@ -1,6 +1,6 @@
 {
   "name": "ai-arena-backend",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Test your strategy and programming skills in the AI Arena.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
