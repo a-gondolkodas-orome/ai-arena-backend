@@ -11,18 +11,16 @@ import { UserWithRelations } from "@loopback/authentication-jwt";
 import { AssertException, ValidationError } from "../errors";
 import {
   Action,
-  Actor,
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
-import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestService } from "../services/contest.service";
 import { ContestRepository } from "../repositories/contest.repository";
-import { UserRepository } from "../repositories/user.repository";
 import { MatchService } from "../services/match.service";
 import { assertValue } from "../utils";
+import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 
 export enum ContestStatus {
   OPEN = "OPEN",
@@ -58,35 +56,36 @@ export class Contest extends Entity {
   static readonly EXCEPTION_CODE__CONTEST_NOT_FOUND = "CONTEST_NOT_FOUND";
 
   static async create(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     contestInput: ContestInput,
     authorizationService: AuthorizationService,
     contestRepository: ContestRepository,
   ) {
-    await authorizationService.authorize(actor, Action.CREATE, contestInput);
-    return contestRepository.validateAndCreate(actor, contestInput);
+    await authorizationService.authorize(context.actor, Action.CREATE, contestInput);
+    return contestRepository.validateAndCreate(context.actor, contestInput);
   }
 
   static async getContests(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
     contestRepository: ContestRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, ResourceCollection.CONTESTS);
+    await authorizationService.authorize(context.actor, Action.READ, ResourceCollection.CONTESTS);
     return contestRepository.find();
   }
 
   static async getContest(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
-    contestRepository: ContestRepository,
   ) {
-    return contestRepository.findOne({ where: { id } });
+    const contest = await context.loaders.contest.load(id);
+    await authorizationService.authorize(context.actor, Action.READ, contest);
+    return contest;
   }
 
   static async register(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     contestId: string,
     botId: string,
     authorizationService: AuthorizationService,
@@ -105,7 +104,7 @@ export class Contest extends Entity {
     else {
       if (bot.submitStatus.stage !== BotSubmitStage.CHECK_SUCCESS)
         botIdErrors.push(`Bot ${botId} can not be executed. Check failed.`);
-      if (bot.userId !== actor.id)
+      if (bot.userId !== context.actor.id)
         botIdErrors.push(`Contest registration is allowed only with own bots.`);
     }
     if (contestIdErrors.length || botIdErrors.length) {
@@ -117,17 +116,24 @@ export class Contest extends Entity {
       });
     }
     assertValue(contest);
-    await authorizationService.authorize(actor, Action.CONTEST_REGISTER, contest, undefined, bot);
-    await this.removeUserBotFromContest(actor, contest, botRepository);
+    await authorizationService.authorize(
+      context.actor,
+      Action.CONTEST_REGISTER,
+      contest,
+      undefined,
+      bot,
+    );
+    await this.removeUserBotFromContest(context.actor, contest, botRepository);
     contest.botIds.push(botId);
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
     delete (contest as Contest & Partial<ContestRelations>).bots;
+    context.loaders.contest.clear(contestId);
     await contestRepository.update(contest);
     return contest;
   }
 
   static async unregister(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     contestId: string,
     authorizationService: AuthorizationService,
     contestRepository: ContestRepository,
@@ -142,31 +148,32 @@ export class Contest extends Entity {
         this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
       );
     }
-    await authorizationService.authorize(actor, Action.CONTEST_UNREGISTER, contest);
-    if (!(await this.removeUserBotFromContest(actor, contest, botRepository))) {
+    await authorizationService.authorize(context.actor, Action.CONTEST_UNREGISTER, contest);
+    if (!(await this.removeUserBotFromContest(context.actor, contest, botRepository))) {
       throw new ValidationError({ fieldErrors: { contestId: ["User not registered."] } });
     }
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
     delete (contest as Contest & Partial<ContestRelations>).bots;
+    context.loaders.contest.clear(contestId);
     await contestRepository.update(contest);
     return contest;
   }
 
   static async updateStatus(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     contestId: string,
     status: ContestStatus,
     authorizationService: AuthorizationService,
     matchService: MatchService,
     contestRepository: ContestRepository,
   ) {
-    const contest = await contestRepository.findOne({ where: { id: contestId } });
+    const contest = await context.loaders.contest.load(contestId);
     if (!contest) {
       throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
         this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
       );
     }
-    await authorizationService.authorize(actor, Action.UPDATE, contest, "status");
+    await authorizationService.authorize(context.actor, Action.UPDATE, contest, "status");
     if (
       (contest.status === ContestStatus.OPEN && status === ContestStatus.CLOSED) ||
       (contest.status === ContestStatus.CLOSED && status === ContestStatus.OPEN) ||
@@ -180,6 +187,7 @@ export class Contest extends Entity {
         contest.matchIds = [];
       }
       contest.status = status;
+      context.loaders.contest.clear(contestId);
       await contestRepository.update(contest);
       return contest;
     } else {
@@ -188,21 +196,22 @@ export class Contest extends Entity {
   }
 
   static async start(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     contestId: string,
     authorizationService: AuthorizationService,
     contestService: ContestService,
     contestRepository: ContestRepository,
   ) {
-    const contest = await contestRepository.findOne({ where: { id: contestId } });
+    const contest = await context.loaders.contest.load(contestId);
     if (!contest) {
       throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
         this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
       );
     }
-    await authorizationService.authorize(actor, Action.CONTEST_START, contest);
+    await authorizationService.authorize(context.actor, Action.CONTEST_START, contest);
     if (contest.status === ContestStatus.OPEN || contest.status === ContestStatus.CLOSED) {
       contest.status = ContestStatus.RUNNING;
+      context.loaders.contest.clear(contestId);
       await contestRepository.update(contest);
       contestService.runContest(contest).catch((error) => console.error(error));
       return contest;
@@ -236,8 +245,11 @@ export class Contest extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "id");
+  async getIdAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "id");
     return this.id;
   }
 
@@ -245,32 +257,33 @@ export class Contest extends Entity {
   gameId: string;
 
   async getGameAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    gameRepository: GameRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "game");
-    return gameRepository.findById(this.gameId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "game");
+    return context.loaders.game.load(this.gameId);
   }
 
   @belongsTo(() => User, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   ownerId: string;
 
   async getOwnerAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    userRepository: UserRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "owner");
-    return userRepository.findById(this.ownerId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "owner");
+    return context.loaders.user.load(this.ownerId);
   }
 
   @field()
   @property()
   name: string;
 
-  async getNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "name");
+  async getNameAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "name");
     return this.name;
   }
 
@@ -278,8 +291,11 @@ export class Contest extends Entity {
   @property()
   date: Date;
 
-  async getDateAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "date");
+  async getDateAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "date");
     return this.date;
   }
 
@@ -287,8 +303,11 @@ export class Contest extends Entity {
   @property.array(String)
   mapNames: string[];
 
-  async getMapNamesAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "mapNames");
+  async getMapNamesAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "mapNames");
     return this.mapNames;
   }
 
@@ -297,16 +316,15 @@ export class Contest extends Entity {
 
   // noinspection DuplicatedCode
   async getBotsAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    botRepository: BotRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "bots");
+    await authorizationService.authorize(context.actor, Action.READ, this, "bots");
     const botsById = new Map(
-      (await botRepository.find({ where: { id: { inq: this.botIds } } })).map((bot) => [
-        bot.id,
-        bot,
-      ]),
+      (await context.loaders.bot.loadMany(this.botIds)).map((bot) => {
+        if (bot instanceof Error) throw bot;
+        return [bot.id, bot];
+      }),
     );
     return this.botIds.map<typeof BotOrDeleted>((botId) => {
       const bot = botsById.get(botId);
@@ -320,11 +338,11 @@ export class Contest extends Entity {
   matchIds: string[];
 
   async getMatchesAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "matches");
+    await authorizationService.authorize(context.actor, Action.READ, this, "matches");
     return matchRepository.find({ where: { id: { inq: this.matchIds } }, fields: { log: false } });
   }
 
@@ -332,8 +350,11 @@ export class Contest extends Entity {
   @property()
   status: ContestStatus;
 
-  async getStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "status");
+  async getStatusAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "status");
     return this.status;
   }
 
@@ -341,8 +362,11 @@ export class Contest extends Entity {
   @property()
   progress?: ContestProgress;
 
-  async getProgressAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "progress");
+  async getProgressAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "progress");
     return this.progress;
   }
 
@@ -350,8 +374,11 @@ export class Contest extends Entity {
   @property()
   scoreJson?: string;
 
-  async getScoreJsonAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "scoreJson");
+  async getScoreJsonAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "scoreJson");
     return this.scoreJson;
   }
 }

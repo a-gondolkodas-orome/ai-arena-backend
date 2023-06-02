@@ -94,11 +94,13 @@ export class AuthorizationService {
           return true;
         case Role.USER: {
           if (object instanceof User) {
+            if (action === Action.READ && field === undefined) return true;
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "username") return true;
           }
           if (action === Action.READ && object === ResourceCollection.GAMES) return true;
           if (object instanceof Game) {
+            if (action === Action.READ && field === undefined) return true;
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "name") return true;
             if (action === Action.READ && field === "shortDescription") return true;
@@ -110,6 +112,7 @@ export class AuthorizationService {
           if (action === Action.READ && object === ResourceCollection.BOTS) return true;
           if (action === Action.CREATE && object instanceof BotInput) return true;
           if (object instanceof Bot) {
+            if (action === Action.READ && field === undefined) return true;
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "user") return true;
             if (action === Action.READ && field === "game") return true;
@@ -119,6 +122,7 @@ export class AuthorizationService {
           if (action === Action.READ && object === ResourceCollection.MATCHES) return true;
           if (action === Action.READ && object === ResourceCollection.CONTESTS) return true;
           if (object instanceof Contest) {
+            if (action === Action.READ && field === undefined) return true;
             if (action === Action.READ && field === "id") return true;
             if (action === Action.READ && field === "game") return true;
             if (action === Action.READ && field === "owner") return true;
@@ -185,6 +189,7 @@ export class AuthorizationService {
         isContestParticipant = !!contest?.bots?.some((bot) => bot.userId === actor.id);
       }
       if (object.userId === actor.id || isMatchParticipant || isContestParticipant) {
+        if (action === Action.READ && field === undefined) return true;
         if (action === Action.READ && field === "id") return true;
         if (action === Action.READ && field === "user") return true;
         if (action === Action.READ && field === "game") return true;

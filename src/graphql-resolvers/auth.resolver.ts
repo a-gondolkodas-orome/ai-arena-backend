@@ -39,7 +39,7 @@ export class AuthResolver extends BaseResolver<Actor> {
     return handleAuthErrors(async () => {
       try {
         const { user, token } = await User.create(
-          this.actor,
+          this.context,
           registrationData,
           this.authorizationService,
           this.userRepository,
@@ -73,16 +73,9 @@ export class AuthResolver extends BaseResolver<Actor> {
   @query(() => UserResponse)
   async profile(): Promise<typeof UserResponse> {
     return handleAuthErrors(async () => {
-      if (!this.actor) throw new AuthenticationError({});
+      if (!this.context.actor) throw new AuthenticationError({});
       return Object.assign(
-        notNull(
-          await User.getUser(
-            this.actor,
-            this.actor.id,
-            this.authorizationService,
-            this.userRepository,
-          ),
-        ),
+        notNull(await User.getUser(this.context, this.context.actor.id, this.authorizationService)),
         { __typename: "User" },
       );
     });

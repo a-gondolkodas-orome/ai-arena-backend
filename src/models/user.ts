@@ -5,7 +5,6 @@ import { registerEnumType } from "type-graphql";
 import { GqlValue } from "../common";
 import {
   Action,
-  Actor,
   AuthorizationService,
   ResourceCollection,
   Role,
@@ -13,6 +12,7 @@ import {
 import { TokenService } from "@loopback/authentication";
 import { UserRepository } from "../repositories/user.repository";
 import { UserService } from "../services/user.service";
+import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 
 registerEnumType(Role, {
   name: "Role",
@@ -22,14 +22,14 @@ registerEnumType(Role, {
 @model({ settings: { strict: false } })
 export class User extends Entity {
   static async create(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     registrationData: RegistrationInput,
     authorizationService: AuthorizationService,
     userRepository: UserRepository,
     userService: UserService,
     jwtService: TokenService,
   ) {
-    await authorizationService.authorize(actor, Action.CREATE, registrationData);
+    await authorizationService.authorize(context.actor, Action.CREATE, registrationData);
     const user = await userRepository.validateAndCreate(registrationData, [Role.USER]);
     const userProfile = userService.convertToUserProfile(user);
     const token = await jwtService.generateToken(userProfile);
@@ -37,21 +37,22 @@ export class User extends Entity {
   }
 
   static async getUsers(
-    actor: User,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
     userRepository: UserRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, ResourceCollection.USERS);
+    await authorizationService.authorize(context.actor, Action.READ, ResourceCollection.USERS);
     return userRepository.find();
   }
 
   static async getUser(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
-    userRepository: UserRepository,
   ) {
-    return userRepository.findOne({ where: { id } });
+    const user = await context.loaders.user.load(id);
+    await authorizationService.authorize(context.actor, Action.READ, user);
+    return user;
   }
 
   static async login(credentials: Credentials, userService: UserService, jwtService: TokenService) {
@@ -65,8 +66,11 @@ export class User extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "id");
+  async getIdAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "id");
     return this.id;
   }
 
@@ -74,8 +78,11 @@ export class User extends Entity {
   @property()
   username: string;
 
-  async getUsernameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "username");
+  async getUsernameAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "username");
     return this.username;
   }
 
@@ -83,8 +90,11 @@ export class User extends Entity {
   @property()
   email: string;
 
-  async getEmailAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "email");
+  async getEmailAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "email");
     return this.email;
   }
 
@@ -95,8 +105,11 @@ export class User extends Entity {
   @property.array(String)
   roles: Role[];
 
-  async getRolesAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "roles");
+  async getRolesAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "roles");
     return this.roles;
   }
 }

@@ -9,17 +9,14 @@ import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
 import {
   Action,
-  Actor,
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
 import { MatchRepository } from "../repositories/match.repository";
-import { GameRepository } from "../repositories/game.repository";
-import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
-import { UserRepository } from "../repositories/user.repository";
 import { AssertException } from "../errors";
 import { BotService } from "../services/bot.service";
+import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -51,41 +48,42 @@ export class MatchRunStatus extends Model {
 @model()
 export class Match extends Entity {
   static async create(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     matchInput: MatchInput,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
     matchService: MatchService,
   ) {
-    await authorizationService.authorize(actor, Action.CREATE, matchInput);
-    const match = await matchRepository.validateAndCreate(actor, matchInput);
+    await authorizationService.authorize(context.actor, Action.CREATE, matchInput);
+    const match = await matchRepository.validateAndCreate(context.actor, matchInput);
     matchService.runMatch(match).catch((e) => console.error(e)); // TODO improve logging
     return match;
   }
 
   static async getMatches(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     gameId: string,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, ResourceCollection.MATCHES);
+    await authorizationService.authorize(context.actor, Action.READ, ResourceCollection.MATCHES);
     return matchRepository.find({
-      where: { gameId, userId: actor.id },
+      where: { gameId, userId: context.actor.id },
     });
   }
 
   static async getMatch(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
-    matchRepository: MatchRepository,
   ) {
-    return matchRepository.findOne({ where: { id } });
+    const match = await context.loaders.match.load(id);
+    await authorizationService.authorize(context.actor, Action.READ, match);
+    return match;
   }
 
   static async delete(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
@@ -93,11 +91,12 @@ export class Match extends Entity {
     matchService: MatchService,
   ) {
     const match = await matchRepository.findOne({ where: { id }, include: ["bots"] });
-    await authorizationService.authorize(actor, Action.DELETE, match);
+    await authorizationService.authorize(context.actor, Action.DELETE, match);
     if (match === null)
       throw new AssertException({
         message: "Match.delete: should not be authorized for null match",
       });
+    context.loaders.match.clear(id);
     await matchService.deleteMatchBuild(id);
     await matchRepository.deleteById(id);
   }
@@ -106,8 +105,11 @@ export class Match extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "id");
+  async getIdAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "id");
     return this.id;
   }
 
@@ -115,32 +117,33 @@ export class Match extends Entity {
   userId: string;
 
   async getUserAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    userRepository: UserRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "user");
-    return userRepository.findById(this.userId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "user");
+    return context.loaders.user.load(this.userId);
   }
 
   @belongsTo(() => Game, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   gameId: string;
 
   async getGameAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    gameRepository: GameRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "game");
-    return gameRepository.findById(this.userId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "game");
+    return context.loaders.game.load(this.gameId);
   }
 
   @field()
   @property()
   mapName: string;
 
-  async getMapNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "mapName");
+  async getMapNameAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "mapName");
     return this.mapName;
   }
 
@@ -149,16 +152,15 @@ export class Match extends Entity {
 
   // noinspection DuplicatedCode
   async getBotsAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    botRepository: BotRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "bots");
+    await authorizationService.authorize(context.actor, Action.READ, this, "bots");
     const botsById = new Map(
-      (await botRepository.find({ where: { id: { inq: this.botIds } } })).map((bot) => [
-        bot.id,
-        bot,
-      ]),
+      (await context.loaders.bot.loadMany(this.botIds)).map((bot) => {
+        if (bot instanceof Error) throw bot;
+        return [bot.id, bot];
+      }),
     );
     return this.botIds.map<typeof BotOrDeleted>((botId) => {
       const bot = botsById.get(botId);
@@ -172,8 +174,11 @@ export class Match extends Entity {
   @property()
   runStatus: MatchRunStatus;
 
-  async getRunStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "runStatus");
+  async getRunStatusAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "runStatus");
     return this.runStatus;
   }
 
@@ -188,8 +193,11 @@ export class Match extends Entity {
     fileName: string;
   };
 
-  async getLogStringAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "logString");
+  async getLogStringAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "logString");
     return this.logString;
   }
 
@@ -197,8 +205,11 @@ export class Match extends Entity {
   @field({ nullable: true })
   scoreJson?: string;
 
-  async getScoreJsonAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "scoreJson");
+  async getScoreJsonAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "scoreJson");
     return this.scoreJson;
   }
 }

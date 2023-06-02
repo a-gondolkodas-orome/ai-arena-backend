@@ -30,55 +30,50 @@ export class GameResolver extends BaseResolver implements ResolverInterface<Game
   async getGames(): Promise<typeof GamesResponse> {
     return handleAuthErrors(async () => ({
       __typename: "Games",
-      games: await Game.getGames(this.actor, this.authorizationService, this.gameRepository),
+      games: await Game.getGames(this.context, this.authorizationService, this.gameRepository),
     }));
   }
 
   @query(() => GameResponse, { nullable: true })
   async getGame(@arg("id") id: string): Promise<typeof GameResponse | null> {
     return handleAuthErrors(async () => {
-      const game = await Game.getGame(
-        this.actor,
-        id,
-        this.authorizationService,
-        this.gameRepository,
-      );
+      const game = await Game.getGame(this.context, id, this.authorizationService);
       return game ? Object.assign(game, { __typename: "Game" }) : null;
     });
   }
 
   @fieldResolver()
   async id(@root() game: Game) {
-    return game.getIdAuthorized(this.actor, this.authorizationService);
+    return game.getIdAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async name(@root() game: Game) {
-    return game.getNameAuthorized(this.actor, this.authorizationService);
+    return game.getNameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async shortDescription(@root() game: Game) {
-    return game.getShortDescriptionAuthorized(this.actor, this.authorizationService);
+    return game.getShortDescriptionAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => String)
   async picture(@root() game: Game) {
-    return game.getPictureAuthorized(this.actor, this.authorizationService);
+    return game.getPictureAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async fullDescription(@root() game: Game) {
-    return game.getFullDescriptionAuthorized(this.actor, this.authorizationService);
+    return game.getFullDescriptionAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async playerCount(@root() game: Game) {
-    return game.getPlayerCountAuthorized(this.actor, this.authorizationService);
+    return game.getPlayerCountAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async maps(@root() game: Game) {
-    return game.getMapsAuthorized(this.actor, this.authorizationService);
+    return game.getMapsAuthorized(this.context, this.authorizationService);
   }
 }

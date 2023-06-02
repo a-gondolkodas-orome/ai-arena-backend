@@ -58,6 +58,7 @@
     "apollo-server-errors": "^3.3.1",
     "base64-js": "^1.5.1",
     "bcryptjs": "^2.4.3",
+    "dataloader": "^2.2.2",
     "fp-ts": "^2.12.3",
     "graphql": "^15.3.0",
     "io-ts": "^2.2.18",

@@ -9,15 +9,30 @@ export class MongodbRepository<
   Relations extends object = {},
 > extends DefaultCrudRepository<T, ID, Relations> {
   override async find(filter?: Filter<T>, options?: Options) {
+    console.log(
+      `${this.modelClass.modelName}.find(${filter ? JSON.stringify(filter) : ""}${
+        options ? ", " + JSON.stringify(options) : ""
+      })`,
+    );
     return (await super.find(filter, options)).map((entity) => convertObjectIdsToString(entity));
   }
 
   override async findOne(filter?: Filter<T>, options?: Options) {
+    console.log(
+      `${this.modelClass.modelName}.findOne(${JSON.stringify(filter)}${
+        options ? ", " + JSON.stringify(options) : ""
+      })`,
+    );
     const entity = await super.findOne(filter, options);
     return entity ? convertObjectIdsToString(entity) : null;
   }
 
   override async findById(id: ID, filter?: FilterExcludingWhere<T>, options?: Options) {
+    console.log(
+      `${this.modelClass.modelName}.findById(${id}${filter ? ", " + JSON.stringify(filter) : ""}${
+        options ? ", " + JSON.stringify(options) : ""
+      })`,
+    );
     return convertObjectIdsToString(await super.findById(id, filter, options));
   }
 }

@@ -13,7 +13,7 @@ import {
 } from "@loopback/authentication-jwt";
 import { MongoDataSource } from "./datasources";
 import { AiArenaBindings } from "./keys";
-import { GraphqlAuthenticationProvider } from "./authentication/graphql-authentication.provider";
+import { GraphqlContextResolverProvider } from "./graphql-resolvers/graphql-context-resolver.provider";
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
 import { UserRepository } from "./repositories/user.repository";
 import { JwtService } from "./services/jwt.service";
@@ -36,7 +36,7 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     );
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware("middleware.express.GraphQL", server.expressApp);
-    this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlAuthenticationProvider);
+    this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlContextResolverProvider);
 
     this.sequence(AiArenaSequence);
     this.static("/", path.join(__dirname, "../public"));

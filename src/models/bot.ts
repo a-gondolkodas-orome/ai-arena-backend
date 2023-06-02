@@ -8,15 +8,13 @@ import { File } from "./base";
 import { createUnionType, registerEnumType } from "type-graphql";
 import {
   Action,
-  Actor,
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
 import { BotService } from "../services/bot.service";
-import { GameRepository } from "../repositories/game.repository";
 import { BotRepository } from "../repositories/bot.repository";
-import { UserRepository } from "../repositories/user.repository";
 import { UserService } from "../services/user.service";
+import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 
 export enum BotSubmitStage {
   REGISTERED = "REGISTERED",
@@ -46,26 +44,26 @@ export class BotSubmitStatus extends Model {
 @model()
 export class Bot extends Entity {
   static async create(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     botInput: BotInput,
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
   ) {
-    await authorizationService.authorize(actor, Action.CREATE, botInput);
-    return botRepository.validateAndCreate(actor, botInput);
+    await authorizationService.authorize(context.actor, Action.CREATE, botInput);
+    return botRepository.validateAndCreate(context.actor, botInput);
   }
 
   static async getBots(
-    actor: User,
+    context: AiArenaGraphqlContext & { actor: User },
     gameId: string,
     includeTestBots: boolean,
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
     userService: UserService,
   ) {
-    await authorizationService.authorize(actor, Action.READ, ResourceCollection.BOTS);
+    await authorizationService.authorize(context.actor, Action.READ, ResourceCollection.BOTS);
     const systemUser = await userService.getSystemUser();
-    const userIds = includeTestBots ? [actor.id, systemUser.id] : [actor.id];
+    const userIds = includeTestBots ? [context.actor.id, systemUser.id] : [context.actor.id];
     return (
       await botRepository.find({
         where: { gameId, userId: { inq: userIds }, deleted: { neq: true } },
@@ -78,23 +76,25 @@ export class Bot extends Entity {
   }
 
   static async getBot(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
-    botRepository: BotRepository,
   ) {
-    return botRepository.findOne({ where: { id } });
+    const bot = await context.loaders.bot.load(id);
+    await authorizationService.authorize(context.actor, Action.READ, bot);
+    return bot;
   }
 
   static async delete(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
     botRepository: BotRepository,
     botService: BotService,
   ) {
     const bot = await botRepository.findOne({ where: { id } });
-    await authorizationService.authorize(actor, Action.DELETE, bot);
+    await authorizationService.authorize(context.actor, Action.DELETE, bot);
+    context.loaders.bot.clear(id);
     await botService.deleteBotBuild(id);
     if (!(await botService.tryDeleteBot(id))) {
       await botRepository.updateById(id, { deleted: true });
@@ -105,8 +105,11 @@ export class Bot extends Entity {
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "id");
+  async getIdAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "id");
     return this.id;
   }
 
@@ -114,32 +117,33 @@ export class Bot extends Entity {
   userId: string;
 
   async getUserAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    userRepository: UserRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "user");
-    return userRepository.findById(this.userId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "user");
+    return context.loaders.user.load(this.userId);
   }
 
   @belongsTo(() => Game, {}, { type: "string", mongodb: { dataType: "ObjectId" } })
   gameId: string;
 
   async getGameAuthorized(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    gameRepository: GameRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, this, "game");
-    return gameRepository.findById(this.userId);
+    await authorizationService.authorize(context.actor, Action.READ, this, "game");
+    return context.loaders.game.load(this.userId);
   }
 
   @field()
   @property()
   name: string;
 
-  async getNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "name");
+  async getNameAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "name");
     return this.name;
   }
 
@@ -147,8 +151,11 @@ export class Bot extends Entity {
   @property()
   submitStatus: BotSubmitStatus;
 
-  async getSubmitStatusAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "submitStatus");
+  async getSubmitStatusAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "submitStatus");
     return this.submitStatus;
   }
 
@@ -156,8 +163,11 @@ export class Bot extends Entity {
   @property()
   deleted: boolean;
 
-  async getDeletedAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "deleted");
+  async getDeletedAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "deleted");
     return this.deleted;
   }
 
@@ -165,8 +175,11 @@ export class Bot extends Entity {
   @property()
   source?: File;
 
-  async getSourceAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "source");
+  async getSourceAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "source");
     return this.source;
   }
 

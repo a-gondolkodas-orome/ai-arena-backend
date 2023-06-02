@@ -21,20 +21,14 @@ import { User } from "../models/user";
 import { Game } from "../models/game";
 import { AuthorizationService } from "../services/authorization.service";
 import { BotOrDeleted } from "../models/bot";
-import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
-import { BotRepository } from "../repositories/bot.repository";
 import { MatchService } from "../services/match.service";
-import { UserRepository } from "../repositories/user.repository";
 import { BotService } from "../services/bot.service";
 
 @resolver(() => Match)
 export class MatchResolver extends BaseResolver implements ResolverInterface<Match> {
   constructor(
     @repository("MatchRepository") protected matchRepository: MatchRepository,
-    @repository("UserRepository") protected userRepository: UserRepository,
-    @repository("GameRepository") protected gameRepository: GameRepository,
-    @repository("BotRepository") protected botRepository: BotRepository,
     @service() protected authorizationService: AuthorizationService,
     @service() protected botService: BotService,
     @service() protected matchService: MatchService,
@@ -49,7 +43,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
       try {
         return Object.assign(
           await Match.create(
-            this.actor,
+            this.context,
             matchInput,
             this.authorizationService,
             this.matchRepository,
@@ -75,7 +69,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     return handleAuthErrors(async () => ({
       __typename: "Matches",
       matches: await Match.getMatches(
-        this.actor,
+        this.context,
         gameId,
         this.authorizationService,
         this.matchRepository,
@@ -86,12 +80,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
   @query(() => MatchResponse)
   async getMatch(@arg("id") id: string) {
     return handleAuthErrors(async () => {
-      const match = await Match.getMatch(
-        this.actor,
-        id,
-        this.authorizationService,
-        this.matchRepository,
-      );
+      const match = await Match.getMatch(this.context, id, this.authorizationService);
       return match ? Object.assign(match, { __typename: "Match" }) : null;
     });
   }
@@ -100,7 +89,7 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
   async deleteMatch(@arg("id") id: string) {
     return handleAuthErrors(async () =>
       Match.delete(
-        this.actor,
+        this.context,
         id,
         this.authorizationService,
         this.matchRepository,
@@ -112,41 +101,41 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
 
   @fieldResolver()
   async id(@root() match: Match) {
-    return match.getIdAuthorized(this.actor, this.authorizationService);
+    return match.getIdAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => User)
   async user(@root() match: Match) {
-    return match.getUserAuthorized(this.actor, this.authorizationService, this.userRepository);
+    return match.getUserAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => Game)
   async game(@root() match: Match) {
-    return match.getGameAuthorized(this.actor, this.authorizationService, this.gameRepository);
+    return match.getGameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => Game)
   async mapName(@root() match: Match) {
-    return match.getMapNameAuthorized(this.actor, this.authorizationService);
+    return match.getMapNameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => [BotOrDeleted])
   async bots(@root() match: Match) {
-    return match.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
+    return match.getBotsAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async runStatus(@root() match: Match) {
-    return match.getRunStatusAuthorized(this.actor, this.authorizationService);
+    return match.getRunStatusAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async logString(@root() match: Match) {
-    return match.getLogStringAuthorized(this.actor, this.authorizationService);
+    return match.getLogStringAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async scoreJson(@root() match: Match) {
-    return match.getScoreJsonAuthorized(this.actor, this.authorizationService);
+    return match.getScoreJsonAuthorized(this.context, this.authorizationService);
   }
 }

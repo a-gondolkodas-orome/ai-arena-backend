@@ -2828,6 +2828,7 @@ __metadata:
     apollo-server-errors: ^3.3.1
     base64-js: ^1.5.1
     bcryptjs: ^2.4.3
+    dataloader: ^2.2.2
     eslint: ^8.39.0
     eslint-config-prettier: ^8.8.0
     eslint-plugin-mocha: ^10.1.0
@@ -3787,6 +3788,13 @@ __metadata:
   version: 0.0.10
   resolution: "cssfilter@npm:0.0.10"
   checksum: bc2c52bbb3426c3f2e4832edb6f8573e6cfa65b40b540932762d1e018f0f0157725e2991b77344bbc8266c6bbf4daa2803b0707cfb1bd0877505bf83a68e4b04
+  languageName: node
+  linkType: hard
+
+"dataloader@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "dataloader@npm:2.2.2"
+  checksum: 4dabd247089c29f194e94d5434d504f99156c5c214a03463c20f3f17f40398d7e179edee69a27c16e315519ac8739042a810090087ae26449a0e685156a02c65
   languageName: node
   linkType: hard
 

@@ -28,27 +28,27 @@ export class UserResolver extends BaseResolver {
   async getUsers(): Promise<typeof UsersResponse> {
     return handleAuthErrors(async () => ({
       __typename: "Users",
-      users: await User.getUsers(this.actor, this.authorizationService, this.userRepository),
+      users: await User.getUsers(this.context, this.authorizationService, this.userRepository),
     }));
   }
 
   @fieldResolver()
   async id(@root() user: User) {
-    return user.getIdAuthorized(this.actor, this.authorizationService);
+    return user.getIdAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async username(@root() user: User) {
-    return user.getUsernameAuthorized(this.actor, this.authorizationService);
+    return user.getUsernameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async email(@root() user: User) {
-    return user.getEmailAuthorized(this.actor, this.authorizationService);
+    return user.getEmailAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async roles(@root() user: User) {
-    return user.getRolesAuthorized(this.actor, this.authorizationService);
+    return user.getRolesAuthorized(this.context, this.authorizationService);
   }
 }

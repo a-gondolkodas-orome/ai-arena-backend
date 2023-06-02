@@ -34,11 +34,9 @@ import { User } from "../models/user";
 import { Match } from "../models/match";
 import { AuthorizationService } from "../services/authorization.service";
 import { ContestService } from "../services/contest.service";
-import { GameRepository } from "../repositories/game.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestRepository } from "../repositories/contest.repository";
-import { UserRepository } from "../repositories/user.repository";
 import { MatchService } from "../services/match.service";
 
 @resolver(() => Contest)
@@ -48,8 +46,6 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     @service() protected matchService: MatchService,
     @service() protected contestService: ContestService,
     @repository(BotRepository) protected botRepository: BotRepository,
-    @repository(UserRepository) protected userRepository: UserRepository,
-    @repository(GameRepository) protected gameRepository: GameRepository,
     @repository(MatchRepository) protected matchRepository: MatchRepository,
     @repository(ContestRepository) protected contestRepository: ContestRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
@@ -63,7 +59,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
       try {
         return Object.assign(
           await Contest.create(
-            this.actor,
+            this.context,
             contestInput,
             this.authorizationService,
             this.contestRepository,
@@ -88,7 +84,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return handleAuthErrors(async () => ({
       __typename: "Contests",
       contests: await Contest.getContests(
-        this.actor,
+        this.context,
         this.authorizationService,
         this.contestRepository,
       ),
@@ -98,12 +94,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
   @query(() => ContestResponse, { nullable: true })
   async getContest(@arg("id") id: string) {
     return handleAuthErrors(async () => {
-      const contest = await Contest.getContest(
-        this.actor,
-        id,
-        this.authorizationService,
-        this.contestRepository,
-      );
+      const contest = await Contest.getContest(this.context, id, this.authorizationService);
       return contest ? Object.assign(contest, { __typename: "Contest" }) : null;
     });
   }
@@ -114,7 +105,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
       try {
         return Object.assign(
           await Contest.register(
-            this.actor,
+            this.context,
             registration.contestId,
             registration.botId,
             this.authorizationService,
@@ -142,7 +133,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
       try {
         return Object.assign(
           await Contest.unregister(
-            this.actor,
+            this.context,
             contestId,
             this.authorizationService,
             this.contestRepository,
@@ -175,7 +166,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return handleAuthErrors(async () => {
       try {
         const result = await Contest.updateStatus(
-          this.actor,
+          this.context,
           contestId,
           status,
           this.authorizationService,
@@ -211,7 +202,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     return handleAuthErrors(async () => {
       try {
         const result = await Contest.start(
-          this.actor,
+          this.context,
           contestId,
           this.authorizationService,
           this.contestService,
@@ -243,44 +234,44 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
 
   @fieldResolver()
   async id(@root() contest: Contest) {
-    return contest.getIdAuthorized(this.actor, this.authorizationService);
+    return contest.getIdAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => Game)
   async game(@root() contest: Contest) {
-    return contest.getGameAuthorized(this.actor, this.authorizationService, this.gameRepository);
+    return contest.getGameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => User)
   async owner(@root() contest: Contest) {
-    return contest.getOwnerAuthorized(this.actor, this.authorizationService, this.userRepository);
+    return contest.getOwnerAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async name(@root() contest: Contest) {
-    return contest.getNameAuthorized(this.actor, this.authorizationService);
+    return contest.getNameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async date(@root() contest: Contest) {
-    return contest.getDateAuthorized(this.actor, this.authorizationService);
+    return contest.getDateAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async mapNames(@root() contest: Contest) {
-    return contest.getMapNamesAuthorized(this.actor, this.authorizationService);
+    return contest.getMapNamesAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => [BotOrDeleted])
   async bots(@root() contest: Contest) {
-    return contest.getBotsAuthorized(this.actor, this.authorizationService, this.botRepository);
+    return contest.getBotsAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => [Match], { nullable: true })
   async matches(@root() contest: Contest) {
     try {
       return await contest.getMatchesAuthorized(
-        this.actor,
+        this.context,
         this.authorizationService,
         this.matchRepository,
       );
@@ -292,16 +283,16 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
 
   @fieldResolver(() => ContestStatus)
   async status(@root() contest: Contest) {
-    return contest.getStatusAuthorized(this.actor, this.authorizationService);
+    return contest.getStatusAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async progress(@root() contest: Contest) {
-    return contest.getProgressAuthorized(this.actor, this.authorizationService);
+    return contest.getProgressAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async scoreJson(@root() contest: Contest) {
-    return contest.getScoreJsonAuthorized(this.actor, this.authorizationService);
+    return contest.getScoreJsonAuthorized(this.context, this.authorizationService);
   }
 }

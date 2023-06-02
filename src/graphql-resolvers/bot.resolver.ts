@@ -20,9 +20,7 @@ import { User } from "../models/user";
 import { Game } from "../models/game";
 import { AuthorizationService } from "../services/authorization.service";
 import { BotService } from "../services/bot.service";
-import { GameRepository } from "../repositories/game.repository";
 import { BotRepository } from "../repositories/bot.repository";
-import { UserRepository } from "../repositories/user.repository";
 import { UserService } from "../services/user.service";
 
 @resolver(() => Bot)
@@ -32,8 +30,6 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     @service() protected botService: BotService,
     @service() protected userService: UserService,
     @repository(BotRepository) protected botRepository: BotRepository,
-    @repository(UserRepository) protected userRepository: UserRepository,
-    @repository(GameRepository) protected gameRepository: GameRepository,
     @inject(GraphQLBindings.RESOLVER_DATA) resolverData: ResolverData,
   ) {
     super(resolverData);
@@ -44,7 +40,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     return handleAuthErrors(async () => {
       try {
         const bot = await Bot.create(
-          this.actor,
+          this.context,
           botInput,
           this.authorizationService,
           this.botRepository,
@@ -75,7 +71,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     return handleAuthErrors(async () => ({
       __typename: "Bots",
       bots: await Bot.getBots(
-        this.actor,
+        this.context,
         gameId,
         includeTestBots,
         this.authorizationService,
@@ -88,7 +84,7 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   @query(() => BotResponse, { nullable: true })
   async getBot(@arg("id") id: string) {
     return handleAuthErrors(async () => {
-      const bot = await Bot.getBot(this.actor, id, this.authorizationService, this.botRepository);
+      const bot = await Bot.getBot(this.context, id, this.authorizationService);
       return bot ? Object.assign(bot, { __typename: "Bot" }) : null;
     });
   }
@@ -96,42 +92,42 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   @mutation(() => AuthError, { nullable: true })
   async deleteBot(@arg("id") id: string) {
     return handleAuthErrors(async () =>
-      Bot.delete(this.actor, id, this.authorizationService, this.botRepository, this.botService),
+      Bot.delete(this.context, id, this.authorizationService, this.botRepository, this.botService),
     );
   }
 
   @fieldResolver()
   async id(@root() bot: Bot) {
-    return bot.getIdAuthorized(this.actor, this.authorizationService);
+    return bot.getIdAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => User)
   async user(@root() bot: Bot) {
-    return bot.getUserAuthorized(this.actor, this.authorizationService, this.userRepository);
+    return bot.getUserAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver(() => Game)
   async game(@root() bot: Bot) {
-    return bot.getGameAuthorized(this.actor, this.authorizationService, this.gameRepository);
+    return bot.getGameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async name(@root() bot: Bot) {
-    return bot.getNameAuthorized(this.actor, this.authorizationService);
+    return bot.getNameAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async submitStatus(@root() bot: Bot) {
-    return bot.getSubmitStatusAuthorized(this.actor, this.authorizationService);
+    return bot.getSubmitStatusAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async deleted(@root() bot: Bot) {
-    return bot.getDeletedAuthorized(this.actor, this.authorizationService);
+    return bot.getDeletedAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()
   async source(@root() bot: Bot) {
-    return bot.getSourceAuthorized(this.actor, this.authorizationService);
+    return bot.getSourceAuthorized(this.context, this.authorizationService);
   }
 }

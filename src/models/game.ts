@@ -6,11 +6,11 @@ import { GqlValue } from "../common";
 import { fromByteArray } from "base64-js";
 import {
   Action,
-  Actor,
   AuthorizationService,
   ResourceCollection,
 } from "../services/authorization.service";
 import { GameRepository } from "../repositories/game.repository";
+import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 
 @objectType("PlayerCount")
 @inputType("PlayerCountInput")
@@ -44,29 +44,33 @@ export class GameMap extends Model {
 @model()
 export class Game extends Entity {
   static async getGames(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
     gameRepository: GameRepository,
   ) {
-    await authorizationService.authorize(actor, Action.READ, ResourceCollection.GAMES);
+    await authorizationService.authorize(context.actor, Action.READ, ResourceCollection.GAMES);
     return gameRepository.find();
   }
 
   static async getGame(
-    actor: Actor,
+    context: AiArenaGraphqlContext,
     id: string,
     authorizationService: AuthorizationService,
-    gameRepository: GameRepository,
   ) {
-    return gameRepository.findOne({ where: { id } });
+    const game = await context.loaders.game.load(id);
+    await authorizationService.authorize(context.actor, Action.READ, game);
+    return game;
   }
 
   @field(() => ID)
   @property({ id: true, type: "string", mongodb: { dataType: "ObjectId" } })
   id: string;
 
-  async getIdAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "id");
+  async getIdAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "id");
     return this.id;
   }
 
@@ -74,8 +78,11 @@ export class Game extends Entity {
   @property()
   name: string;
 
-  async getNameAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "name");
+  async getNameAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "name");
     return this.name;
   }
 
@@ -83,8 +90,11 @@ export class Game extends Entity {
   @property()
   shortDescription: string;
 
-  async getShortDescriptionAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "shortDescription");
+  async getShortDescriptionAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "shortDescription");
     return this.shortDescription;
   }
 
@@ -96,8 +106,11 @@ export class Game extends Entity {
   }
 
   /** base64 representation of a "profile" picture for the game */
-  async getPictureAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "picture");
+  async getPictureAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "picture");
     return this.picture;
   }
 
@@ -106,8 +119,11 @@ export class Game extends Entity {
   @property()
   fullDescription: string;
 
-  async getFullDescriptionAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "fullDescription");
+  async getFullDescriptionAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "fullDescription");
     return this.fullDescription;
   }
 
@@ -115,8 +131,11 @@ export class Game extends Entity {
   @property()
   playerCount: PlayerCount;
 
-  async getPlayerCountAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "playerCount");
+  async getPlayerCountAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "playerCount");
     return this.playerCount;
   }
 
@@ -124,8 +143,11 @@ export class Game extends Entity {
   @property.array(GameMap)
   maps: GameMap[];
 
-  async getMapsAuthorized(actor: Actor, authorizationService: AuthorizationService) {
-    await authorizationService.authorize(actor, Action.READ, this, "maps");
+  async getMapsAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "maps");
     return this.maps;
   }
 
