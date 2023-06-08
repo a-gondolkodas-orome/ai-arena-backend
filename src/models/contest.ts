@@ -321,10 +321,12 @@ export class Contest extends Entity {
   ) {
     await authorizationService.authorize(context.actor, Action.READ, this, "bots");
     const botsById = new Map(
-      (await context.loaders.bot.loadMany(this.botIds)).map((bot) => {
-        if (bot instanceof Error) throw bot;
-        return [bot.id, bot];
-      }),
+      (await context.loaders.bot.loadMany(this.botIds))
+        .filter((bot) => bot)
+        .map((bot) => {
+          if (bot instanceof Error) throw bot;
+          return [bot.id, bot];
+        }),
     );
     return this.botIds.map<typeof BotOrDeleted>((botId) => {
       const bot = botsById.get(botId);

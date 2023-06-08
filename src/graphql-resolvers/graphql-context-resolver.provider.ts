@@ -70,6 +70,7 @@ export class GraphqlContextResolverProvider implements Provider<ContextFunction<
 }
 
 export type GraphqlDataLoaders = {
+  // TODO make result type optional & handle missing entities
   user: DataLoader<typeof User.prototype.id, User>;
   game: DataLoader<typeof Game.prototype.id, Game>;
   bot: DataLoader<typeof Bot.prototype.id, Bot>;
