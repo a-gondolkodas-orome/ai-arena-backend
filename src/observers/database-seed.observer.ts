@@ -65,7 +65,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       name: t.string,
       shortDescription: t.string,
       picturePath: t.string,
-      fullDescriptionPath: t.string,
+      fullDescription: t.record(t.string, t.string),
       playerCount: DatabaseSeedObserver.playerCountCodec,
       maps: t.array(
         t.type({
@@ -129,14 +129,18 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       if (fs.existsSync(publicFolderPath))
         this.app.static(`/public/games/${file.name}`, publicFolderPath);
       await exec(gameConfig.packageServer.command, { cwd: gamePath });
+      const fullDescription: Record<string, string> = {};
+      for (const [languageCode, descriptionPath] of Object.entries(gameConfig.fullDescription)) {
+        fullDescription[languageCode] = (
+          await fsp.readFile(path.join(gamePath, descriptionPath))
+        ).toString();
+      }
       const game = {
         id: gameId,
         name: gameConfig.name,
         shortDescription: gameConfig.shortDescription,
         pictureBuffer: await fsp.readFile(path.join(gamePath, gameConfig.picturePath)),
-        fullDescription: (
-          await fsp.readFile(path.join(gamePath, gameConfig.fullDescriptionPath))
-        ).toString(),
+        fullDescription: JSON.stringify(fullDescription),
         playerCount: gameConfig.playerCount,
         maps,
         server: {
