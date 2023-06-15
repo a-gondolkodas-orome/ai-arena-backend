@@ -17,6 +17,7 @@ import { BotRepository } from "../repositories/bot.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { GameRepository } from "../repositories/game.repository";
 import { UserService } from "../services/user.service";
+import * as crypto from "crypto";
 
 const exec = promisify(child_process.exec);
 
@@ -110,8 +111,14 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
       const systemUser = await this.userService.getSystemUser();
       await this.botRepository.deleteAll({ gameId, userId: systemUser.id });
       for (const botConfig of gameConfig.bots) {
+        const sourceCode = await fsp.readFile(path.join(gamePath, botConfig.path));
         const bot = await this.botRepository.create({
-          id: md5(gameConfig.name + botConfig.name).substring(0, 24),
+          id: crypto
+            .createHash("md5")
+            .update(gameConfig.name + botConfig.name)
+            .update(sourceCode)
+            .digest("hex")
+            .substring(0, 24),
           gameId,
           name: botConfig.name,
           userId: systemUser.id,
@@ -120,7 +127,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           deleted: false,
           source: {
             fileName: path.basename(botConfig.path),
-            content: await fsp.readFile(path.join(gamePath, botConfig.path)),
+            content: sourceCode,
           },
         });
         await this.matchService.checkBot(bot.id);
