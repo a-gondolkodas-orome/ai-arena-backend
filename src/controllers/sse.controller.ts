@@ -29,20 +29,24 @@ export class SseController {
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    // response.setHeader("Access-Control-Allow-Origin", "*"); TODO when is this necessary?
+    response.setHeader("Access-Control-Allow-Origin", "*");
     response.flushHeaders();
+    console.log(`SSE opened ${userId}`);
 
     const keepAliveInterval = setInterval(() => {
       response.write(": keep alive\n\n");
-    }, 60 * Time.second);
+    }, 25 * Time.second);
 
     const sendEvent = (event: string, data: unknown) => {
-      response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      const sseMessage = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+      response.write(sseMessage);
+      console.log(`SSE ${userId}:\n` + sseMessage);
     };
     const sendBotEvent = (data: unknown) => sendEvent(EVENT_TYPE__BOT, data);
     const sendMatchEvent = (data: unknown) => sendEvent(EVENT_TYPE__MATCH, data);
 
     response.on("close", () => {
+      console.log(`SSE closed ${userId}`);
       this.botService.sse.off(userId, sendBotEvent);
       this.matchService.sse.off(userId, sendBotEvent);
       clearInterval(keepAliveInterval);
