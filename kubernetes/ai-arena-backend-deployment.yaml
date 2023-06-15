@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-arena-backend
+  labels:
+    app: ai-arena-backend
+spec:
+  selector:
+    matchLabels:
+      app: ai-arena-backend
+  replicas: 2
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ai-arena-backend
+    spec:
+      containers:
+        - image: ghcr.io/a-gondolkodas-orome/ai-arena-backend
+          imagePullPolicy: Always
+          name: ai-arena-backend
+          env:
+            - name: MONGODB_URL
+              value: "mongodb+srv://ai-arena-dev:Mp8OW0tT2Iy2oPAi@aiarenamongodbcluster.hb2yzwe.mongodb.net/ai-arena?retryWrites=true"
+          ports:
+            - containerPort: 3000
