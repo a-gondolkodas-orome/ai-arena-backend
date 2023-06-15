@@ -214,7 +214,7 @@ export class MatchService {
           configFilePath,
           JSON.stringify(
             MatchService.aiArenaConfigCodec.encode({
-              build: `g++ -std=c++17 -O2 ${programSource.fileName} -o ${targetProgramName}`,
+              build: `g++ -std=c++17 -O2 '${programSource.fileName}' -o ${targetProgramName}`,
               programPath: targetProgramName,
               run: "%program",
             }),
