@@ -1,7 +1,9 @@
 # Check out https://hub.docker.com/_/node to select a new base image
 FROM node:lts-slim
 
-RUN apt update && apt install -y zip
+USER root
+
+RUN apt update && apt install -y zip g++ && rm -rf /var/lib/apt/lists/*
 
 # Set to a non-root built-in user `node`
 USER node

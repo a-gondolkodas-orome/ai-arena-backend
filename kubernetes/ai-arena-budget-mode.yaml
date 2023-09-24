@@ -26,7 +26,10 @@ spec:
           name: ai-arena-backend
           env:
             - name: MONGODB_URL
-              value: "mongodb+srv://ai-arena-dev:Mp8OW0tT2Iy2oPAi@aiarenamongodbcluster.hb2yzwe.mongodb.net/ai-arena?retryWrites=true"
+              valueFrom:
+                secretKeyRef:
+                  name: ai-arena-mongodb
+                  key: mongodb-url
           ports:
             - containerPort: 3000
 ---
