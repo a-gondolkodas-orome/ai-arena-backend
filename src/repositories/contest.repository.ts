@@ -85,6 +85,7 @@ export class ContestRepository extends MongodbRepository<
           botIds: [],
           matchIds: [],
           status: ContestStatus.OPEN,
+          isArchived: false,
         },
         options,
       ),

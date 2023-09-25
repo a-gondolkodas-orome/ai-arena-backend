@@ -34,7 +34,6 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
       userId: user.id,
       gameId: bot.gameId,
       name: bot.name,
-      deleted: false,
     });
     if (botCount.count > 0) nameErrors.push("Bot name already in use");
     const gameIdErrors = [];
@@ -56,7 +55,6 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
           userId: user.id,
           submitStatus: { stage: BotSubmitStage.REGISTERED },
           versionNumber: 0,
-          deleted: false,
         },
         options,
       ),

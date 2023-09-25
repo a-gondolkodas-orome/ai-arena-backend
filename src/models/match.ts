@@ -14,9 +14,9 @@ import {
 } from "../services/authorization.service";
 import { MatchRepository } from "../repositories/match.repository";
 import { MatchService } from "../services/match.service";
-import { AssertException } from "../errors";
-import { BotService } from "../services/bot.service";
 import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
+import * as mongodb from "mongodb";
+import { ValidationError } from "../errors";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -87,14 +87,13 @@ export class Match extends Entity {
     id: string,
     authorizationService: AuthorizationService,
     matchRepository: MatchRepository,
-    botService: BotService,
     matchService: MatchService,
   ) {
     const match = await matchRepository.findOne({ where: { id }, include: ["bots"] });
     await authorizationService.authorize(context.actor, Action.DELETE, match);
     if (match === null)
-      throw new AssertException({
-        message: "Match.delete: should not be authorized for null match",
+      throw new ValidationError({
+        message: "Match not found",
       });
     context.loaders.match.clear(id);
     await matchService.deleteMatchBuild(id);
@@ -187,6 +186,13 @@ export class Match extends Entity {
   @field(() => String, { nullable: true })
   get logString() {
     return this.log?.file?.toString();
+  }
+
+  get logSize() {
+    const logFile = this.log?.file;
+    if (!logFile) return 0;
+    if (logFile instanceof mongodb.Binary) return logFile.buffer.byteLength; // stupidLoopback: the stored Binary isn't converted back to Buffer automatically :(
+    return logFile.length;
   }
 
   @property()

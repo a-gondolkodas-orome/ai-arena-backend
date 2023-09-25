@@ -128,9 +128,3 @@ export const LoginResponse = createAuthErrorUnionType(
   (value: unknown) =>
     (value as GqlValue).__typename === "LoginSuccess" ? "LoginSuccess" : undefined,
 );
-
-export const AuthError = createUnionType({
-  name: "AuthError",
-  types: () => [GraphqlAuthenticationError, GraphqlAuthorizationError] as const,
-  resolveType: resolveAuthErrorType,
-});

@@ -10,6 +10,7 @@ import path from "path";
 import { BotRepository } from "../repositories/bot.repository";
 import { MatchRepository } from "../repositories/match.repository";
 import { ContestRepository } from "../repositories/contest.repository";
+import { ContestStatus } from "../models/contest";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class BotService {
@@ -74,11 +75,20 @@ export class BotService {
     await fsp.rm(BotService.getBotPath(botId), { recursive: true, force: true });
   }
 
-  async tryDeleteBot(id: string) {
-    if ((await this.contestRepository.count({ botIds: id as string[] & string })).count)
-      return false;
-    await this.botRepository.deleteById(id);
-    return true;
+  async canDeleteBot(id: string) {
+    return !(
+      await this.contestRepository.count({
+        botIds: id as string[] & string,
+        status: {
+          inq: [
+            ContestStatus.OPEN,
+            ContestStatus.CLOSED,
+            ContestStatus.RUNNING,
+            ContestStatus.RUN_ERROR,
+          ],
+        },
+      })
+    ).count;
   }
 
   sse = new EventEmitter();

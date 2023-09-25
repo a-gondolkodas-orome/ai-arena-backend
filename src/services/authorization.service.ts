@@ -27,6 +27,7 @@ export enum Action {
   CONTEST_REGISTER = "CONTEST_REGISTER",
   CONTEST_UNREGISTER = "CONTEST_UNREGISTER",
   CONTEST_START = "CONTEST_START",
+  CONTEST_ARCHIVE = "CONTEST_ARCHIVE",
 }
 
 export type ResourceObject = User | Game | Bot | Match | Contest;
@@ -117,7 +118,6 @@ export class AuthorizationService {
             if (action === Action.READ && field === "user") return true;
             if (action === Action.READ && field === "game") return true;
             if (action === Action.READ && field === "name") return true;
-            if (action === Action.READ && field === "deleted") return true;
           }
           if (action === Action.READ && object === ResourceCollection.MATCHES) return true;
           if (action === Action.READ && object === ResourceCollection.CONTESTS) return true;

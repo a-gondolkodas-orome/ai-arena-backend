@@ -124,7 +124,6 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
           userId: systemUser.id,
           submitStatus: { stage: BotSubmitStage.CHECK_SUCCESS },
           versionNumber: 1,
-          deleted: false,
           source: {
             fileName: path.basename(botConfig.path),
             content: sourceCode,

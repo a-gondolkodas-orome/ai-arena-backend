@@ -21,6 +21,7 @@ import { ContestRepository } from "../repositories/contest.repository";
 import { MatchService } from "../services/match.service";
 import { assertValue } from "../utils";
 import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
+import { GraphqlValidationError } from "./base";
 
 export enum ContestStatus {
   OPEN = "OPEN",
@@ -53,8 +54,6 @@ export class ContestProgress {
 @objectType()
 @model()
 export class Contest extends Entity {
-  static readonly EXCEPTION_CODE__CONTEST_NOT_FOUND = "CONTEST_NOT_FOUND";
-
   static async create(
     context: AiArenaGraphqlContext & { actor: User },
     contestInput: ContestInput,
@@ -82,6 +81,52 @@ export class Contest extends Entity {
     const contest = await context.loaders.contest.load(id);
     await authorizationService.authorize(context.actor, Action.READ, contest);
     return contest;
+  }
+
+  static async delete(
+    context: AiArenaGraphqlContext,
+    id: string,
+    authorizationService: AuthorizationService,
+    contestRepository: ContestRepository,
+    matchRepository: MatchRepository,
+    matchService: MatchService,
+  ) {
+    const contest = await contestRepository.findOne({ where: { id } });
+    await authorizationService.authorize(context.actor, Action.DELETE, contest);
+    if (contest === null) throw new ValidationError({ message: "Contest not found" });
+    await this.deleteMatches(context, contest, matchRepository, matchService);
+    await contestRepository.deleteById(id);
+    context.loaders.contest.clear(id);
+  }
+
+  static async flipArchivedStatus(
+    context: AiArenaGraphqlContext,
+    id: string,
+    authorizationService: AuthorizationService,
+    contestRepository: ContestRepository,
+    matchRepository: MatchRepository,
+    matchService: MatchService,
+  ) {
+    const contest = await contestRepository.findOne({ where: { id } });
+    await authorizationService.authorize(context.actor, Action.CONTEST_ARCHIVE, contest);
+    if (contest === null) throw new ValidationError({ message: "Contest not found" });
+    contest.isArchived = !contest.isArchived;
+    if (contest.isArchived)
+      await this.deleteMatches(context, contest, matchRepository, matchService);
+    await contestRepository.update(contest);
+    context.loaders.contest.clear(id);
+    return contest;
+  }
+
+  protected static async deleteMatches(
+    context: AiArenaGraphqlContext,
+    contest: Contest,
+    matchRepository: MatchRepository,
+    matchService: MatchService,
+  ) {
+    await matchRepository.deleteAll({ id: { inq: contest.matchIds } });
+    contest.matchIds.forEach((matchId) => context.loaders.match.clear(matchId));
+    await Promise.all(contest.matchIds.map((matchId) => matchService.deleteMatchBuild(matchId)));
   }
 
   static async register(
@@ -123,7 +168,7 @@ export class Contest extends Entity {
       undefined,
       bot,
     );
-    await this.removeUserBotFromContest(context.actor, contest, botRepository);
+    this.removeUserBotFromContest(context.actor, contest);
     contest.botIds.push(botId);
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
     delete (contest as Contest & Partial<ContestRelations>).bots;
@@ -137,20 +182,17 @@ export class Contest extends Entity {
     contestId: string,
     authorizationService: AuthorizationService,
     contestRepository: ContestRepository,
-    botRepository: BotRepository,
   ) {
     const contest = await contestRepository.findOne({
       where: { id: contestId },
       include: ["bots"],
     });
     if (!contest) {
-      throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
-        this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
-      );
+      throw new ValidationError({ message: "Contest not found." });
     }
     await authorizationService.authorize(context.actor, Action.CONTEST_UNREGISTER, contest);
-    if (!(await this.removeUserBotFromContest(context.actor, contest, botRepository))) {
-      throw new ValidationError({ fieldErrors: { contestId: ["User not registered."] } });
+    if (!this.removeUserBotFromContest(context.actor, contest)) {
+      throw new ValidationError({ message: "User not registered to contest." });
     }
     // Navigational properties are not allowed in model data (https://github.com/loopbackio/loopback-next/issues/4354)
     delete (contest as Contest & Partial<ContestRelations>).bots;
@@ -169,9 +211,7 @@ export class Contest extends Entity {
   ) {
     const contest = await context.loaders.contest.load(contestId);
     if (!contest) {
-      throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
-        this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
-      );
+      throw new ValidationError({ message: "Contest not found" });
     }
     await authorizationService.authorize(context.actor, Action.UPDATE, contest, "status");
     if (
@@ -204,9 +244,7 @@ export class Contest extends Entity {
   ) {
     const contest = await context.loaders.contest.load(contestId);
     if (!contest) {
-      throw new ValidationError({ fieldErrors: { contestId: ["Contest not found."] } }).withCode(
-        this.EXCEPTION_CODE__CONTEST_NOT_FOUND,
-      );
+      throw new ValidationError({ message: "Contest not found" });
     }
     await authorizationService.authorize(context.actor, Action.CONTEST_START, contest);
     if (contest.status === ContestStatus.OPEN || contest.status === ContestStatus.CLOSED) {
@@ -220,11 +258,7 @@ export class Contest extends Entity {
     }
   }
 
-  protected static async removeUserBotFromContest(
-    actor: User,
-    contest: ContestWithRelations,
-    botRepository: BotRepository,
-  ) {
+  protected static removeUserBotFromContest(actor: User, contest: ContestWithRelations) {
     const existingBot = contest.bots.find((registeredBot) => registeredBot.userId === actor.id);
     if (existingBot) {
       const existingBotIdx = contest.botIds.findIndex(
@@ -236,7 +270,6 @@ export class Contest extends Entity {
           values: { existingBotId: existingBot.id },
         });
       contest.botIds.splice(existingBotIdx, 1);
-      if (existingBot.deleted) await botRepository.deleteById(existingBot.id);
     }
     return !!existingBot;
   }
@@ -348,6 +381,20 @@ export class Contest extends Entity {
     return matchRepository.find({ where: { id: { inq: this.matchIds } }, fields: { log: false } });
   }
 
+  _matchSizeTotal: never;
+
+  async getMatchSizeTotalAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+    matchRepository: MatchRepository,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "_matchSizeTotal");
+    const matches = await matchRepository.find({
+      where: { id: { inq: this.matchIds } },
+    });
+    return matches.reduce((sumSize, match) => sumSize + match.logSize, 0);
+  }
+
   @field(() => ContestStatus)
   @property()
   status: ContestStatus;
@@ -383,6 +430,18 @@ export class Contest extends Entity {
     await authorizationService.authorize(context.actor, Action.READ, this, "scoreJson");
     return this.scoreJson;
   }
+
+  @field(() => Boolean, { nullable: true })
+  @property({ type: "boolean" })
+  isArchived: boolean | null;
+
+  async getIsArchivedAuthorized(
+    context: AiArenaGraphqlContext,
+    authorizationService: AuthorizationService,
+  ) {
+    await authorizationService.authorize(context.actor, Action.READ, this, "isArchived");
+    return this.isArchived;
+  }
 }
 
 export interface ContestRelations {
@@ -411,7 +470,7 @@ export class ContestInput {
 
 export const ContestResponse = createAuthErrorUnionType(
   "ContestResponse",
-  [Contest],
+  [Contest, GraphqlValidationError],
   (value: unknown) => ((value as GqlValue).__typename === "Contest" ? "Contest" : undefined),
 );
 
@@ -487,17 +546,14 @@ export const RegisterToContestResponse = createAuthErrorUnionType(
       : undefined,
 );
 
-@objectType({ implements: GraphqlError })
-export class ContestNotFoundError extends GraphqlError {}
-
 export const UnregisterFromContestResponse = createAuthErrorUnionType(
   "UnregisterFromContestResponse",
-  [Contest, ContestNotFoundError],
+  [Contest, GraphqlValidationError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
       ? "Contest"
-      : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? "ContestNotFoundError"
+      : (value as GqlValue).__typename === "GraphqlValidationError"
+      ? "GraphqlValidationError"
       : undefined,
 );
 
@@ -511,12 +567,12 @@ export class UpdateContestStatusError extends GraphqlError {
 
 export const UpdateContestStatusResponse = createAuthErrorUnionType(
   "UpdateContestStatusResponse",
-  [Contest, ContestNotFoundError, UpdateContestStatusError],
+  [Contest, GraphqlValidationError, UpdateContestStatusError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
       ? "Contest"
-      : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? "ContestNotFoundError"
+      : (value as GqlValue).__typename === "GraphqlValidationError"
+      ? "GraphqlValidationError"
       : (value as GqlValue).__typename === "UpdateContestStatusError"
       ? "UpdateContestStatusError"
       : undefined,
@@ -530,12 +586,12 @@ export class StartContestError extends GraphqlError {
 
 export const StartContestResponse = createAuthErrorUnionType(
   "StartContestResponse",
-  [Contest, ContestNotFoundError, StartContestError],
+  [Contest, GraphqlValidationError, StartContestError],
   (value: unknown) =>
     (value as GqlValue).__typename === "Contest"
       ? "Contest"
-      : (value as GqlValue).__typename === "ContestNotFoundError"
-      ? "ContestNotFoundError"
+      : (value as GqlValue).__typename === "GraphqlValidationError"
+      ? "GraphqlValidationError"
       : (value as GqlValue).__typename === "StartContestError"
       ? "StartContestError"
       : undefined,

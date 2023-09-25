@@ -38,6 +38,7 @@ import { MatchRepository } from "../repositories/match.repository";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestRepository } from "../repositories/contest.repository";
 import { MatchService } from "../services/match.service";
+import { ValidatedNoContentResponse } from "../models/base";
 
 @resolver(() => Contest)
 export class ContestResolver extends BaseResolver implements ResolverInterface<Contest> {
@@ -99,6 +100,55 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     });
   }
 
+  @mutation(() => ValidatedNoContentResponse, { nullable: true })
+  async deleteContest(@arg("id") id: string) {
+    return handleAuthErrors(async () => {
+      try {
+        await Contest.delete(
+          this.context,
+          id,
+          this.authorizationService,
+          this.contestRepository,
+          this.matchRepository,
+          this.matchService,
+        );
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            __typename: "GraphqlValidationError",
+            message: error.data.message,
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
+  @mutation(() => ContestResponse, { nullable: true })
+  async flipContestArchivedStatus(@arg("id") id: string) {
+    return handleAuthErrors(async () => {
+      try {
+        const contest = await Contest.flipArchivedStatus(
+          this.context,
+          id,
+          this.authorizationService,
+          this.contestRepository,
+          this.matchRepository,
+          this.matchService,
+        );
+        return Object.assign(contest, { __typename: "Contest" });
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            __typename: "GraphqlValidationError",
+            message: error.data.message,
+          };
+        }
+        throw error;
+      }
+    });
+  }
+
   @mutation(() => RegisterToContestResponse)
   async registerToContest(@arg("registration") registration: ContestRegistration) {
     return handleAuthErrors(async () => {
@@ -137,20 +187,14 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
             contestId,
             this.authorizationService,
             this.contestRepository,
-            this.botRepository,
           ),
           { __typename: "Contest" },
         );
       } catch (error) {
-        if (
-          error instanceof ValidationError &&
-          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
-        ) {
+        if (error instanceof ValidationError) {
           return {
-            __typename: "ContestNotFoundError",
-            message:
-              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
-              "Contest not found.",
+            __typename: "GraphqlValidationError",
+            message: error.message,
           };
         }
         throw error;
@@ -181,15 +225,10 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
               ...result,
             };
       } catch (error) {
-        if (
-          error instanceof ValidationError &&
-          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
-        ) {
+        if (error instanceof ValidationError) {
           return {
-            __typename: "ContestNotFoundError",
-            message:
-              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
-              "Contest not found.",
+            __typename: "GraphqlValidationError",
+            message: error.message,
           };
         }
         throw error;
@@ -216,15 +255,10 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
             ...result,
           };
       } catch (error) {
-        if (
-          error instanceof ValidationError &&
-          error.hasCode(Contest.EXCEPTION_CODE__CONTEST_NOT_FOUND)
-        ) {
+        if (error instanceof ValidationError) {
           return {
-            __typename: "ContestNotFoundError",
-            message:
-              (error.data as t.TypeOf<typeof validationErrorCodec>)?.fieldErrors?.contestId?.[0] ??
-              "Contest not found.",
+            __typename: "GraphqlValidationError",
+            message: error.message,
           };
         }
         throw error;
@@ -281,6 +315,20 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
     }
   }
 
+  @fieldResolver(() => Number, { nullable: true })
+  async matchSizeTotal(@root() contest: Contest) {
+    try {
+      return await contest.getMatchSizeTotalAuthorized(
+        this.context,
+        this.authorizationService,
+        this.matchRepository,
+      );
+    } catch (error) {
+      if (error instanceof AuthorizationError) return null;
+      throw error;
+    }
+  }
+
   @fieldResolver(() => ContestStatus)
   async status(@root() contest: Contest) {
     return contest.getStatusAuthorized(this.context, this.authorizationService);
@@ -294,5 +342,15 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
   @fieldResolver()
   async scoreJson(@root() contest: Contest) {
     return contest.getScoreJsonAuthorized(this.context, this.authorizationService);
+  }
+
+  @fieldResolver(() => Boolean, { nullable: true })
+  async isArchived(@root() contest: Contest) {
+    try {
+      return await contest.getIsArchivedAuthorized(this.context, this.authorizationService);
+    } catch (error) {
+      if (error instanceof AuthorizationError) return null;
+      throw error;
+    }
   }
 }

@@ -63,7 +63,7 @@
     "graphql": "^15.3.0",
     "io-ts": "^2.2.18",
     "jsonwebtoken": "9",
-    "loopback-connector-mongodb": "^6.2.0",
+    "loopback-connector-mongodb": "^7.0.0-alpha.1",
     "md5": "^2.3.0",
     "mongodb": "^4.10.0",
     "multer": "^1.4.5-lts.1",

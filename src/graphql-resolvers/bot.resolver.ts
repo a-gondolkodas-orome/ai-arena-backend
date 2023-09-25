@@ -13,7 +13,7 @@ import {
 import { repository } from "@loopback/repository";
 import { CreateBotResponse, Bot, BotInput, BotResponse, BotsResponse } from "../models/bot";
 import { BaseResolver } from "./base.resolver";
-import { AuthError, handleAuthErrors } from "../models/auth";
+import { handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { User } from "../models/user";
@@ -22,6 +22,7 @@ import { AuthorizationService } from "../services/authorization.service";
 import { BotService } from "../services/bot.service";
 import { BotRepository } from "../repositories/bot.repository";
 import { UserService } from "../services/user.service";
+import { ValidatedNoContentResponse } from "../models/base";
 
 @resolver(() => Bot)
 export class BotResolver extends BaseResolver implements ResolverInterface<Bot> {
@@ -89,11 +90,27 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
     });
   }
 
-  @mutation(() => AuthError, { nullable: true })
+  @mutation(() => ValidatedNoContentResponse, { nullable: true })
   async deleteBot(@arg("id") id: string) {
-    return handleAuthErrors(async () =>
-      Bot.delete(this.context, id, this.authorizationService, this.botRepository, this.botService),
-    );
+    return handleAuthErrors(async () => {
+      try {
+        await Bot.delete(
+          this.context,
+          id,
+          this.authorizationService,
+          this.botRepository,
+          this.botService,
+        );
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            __typename: "GraphqlValidationError",
+            message: error.data.message,
+          };
+        }
+        throw error;
+      }
+    });
   }
 
   @fieldResolver()
@@ -119,11 +136,6 @@ export class BotResolver extends BaseResolver implements ResolverInterface<Bot> 
   @fieldResolver()
   async submitStatus(@root() bot: Bot) {
     return bot.getSubmitStatusAuthorized(this.context, this.authorizationService);
-  }
-
-  @fieldResolver()
-  async deleted(@root() bot: Bot) {
-    return bot.getDeletedAuthorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()

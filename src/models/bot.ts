@@ -15,6 +15,7 @@ import { BotService } from "../services/bot.service";
 import { BotRepository } from "../repositories/bot.repository";
 import { UserService } from "../services/user.service";
 import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
+import { ValidationError } from "../errors";
 
 export enum BotSubmitStage {
   REGISTERED = "REGISTERED",
@@ -66,7 +67,7 @@ export class Bot extends Entity {
     const userIds = includeTestBots ? [context.actor.id, systemUser.id] : [context.actor.id];
     return (
       await botRepository.find({
-        where: { gameId, userId: { inq: userIds }, deleted: { neq: true } },
+        where: { gameId, userId: { inq: userIds } },
       })
     ).sort((a, b) => {
       if ((a.userId === systemUser.id) === (b.userId === systemUser.id))
@@ -94,11 +95,13 @@ export class Bot extends Entity {
   ) {
     const bot = await botRepository.findOne({ where: { id } });
     await authorizationService.authorize(context.actor, Action.DELETE, bot);
+    if (!(await botService.canDeleteBot(id)))
+      throw new ValidationError({
+        message: "The bot is registered to an in-progress contest. Unregister before deleting.",
+      });
     context.loaders.bot.clear(id);
     await botService.deleteBotBuild(id);
-    if (!(await botService.tryDeleteBot(id))) {
-      await botRepository.updateById(id, { deleted: true });
-    }
+    await botRepository.deleteById(id);
   }
 
   @field(() => ID)
@@ -157,18 +160,6 @@ export class Bot extends Entity {
   ) {
     await authorizationService.authorize(context.actor, Action.READ, this, "submitStatus");
     return this.submitStatus;
-  }
-
-  @field()
-  @property()
-  deleted: boolean;
-
-  async getDeletedAuthorized(
-    context: AiArenaGraphqlContext,
-    authorizationService: AuthorizationService,
-  ) {
-    await authorizationService.authorize(context.actor, Action.READ, this, "deleted");
-    return this.deleted;
   }
 
   @field({ nullable: true })

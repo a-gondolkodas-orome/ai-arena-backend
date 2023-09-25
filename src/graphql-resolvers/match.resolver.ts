@@ -13,7 +13,7 @@ import {
 import { repository } from "@loopback/repository";
 import { Match, MatchInput, MatchResponse, CreateMatchResponse } from "../models/match";
 import { BaseResolver } from "./base.resolver";
-import { AuthError, handleAuthErrors } from "../models/auth";
+import { handleAuthErrors } from "../models/auth";
 import { ValidationError, validationErrorCodec } from "../errors";
 import * as t from "io-ts";
 import { MatchesResponse } from "../models/match";
@@ -24,6 +24,7 @@ import { BotOrDeleted } from "../models/bot";
 import { MatchRepository } from "../repositories/match.repository";
 import { MatchService } from "../services/match.service";
 import { BotService } from "../services/bot.service";
+import { ValidatedNoContentResponse } from "../models/base";
 
 @resolver(() => Match)
 export class MatchResolver extends BaseResolver implements ResolverInterface<Match> {
@@ -85,18 +86,27 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
     });
   }
 
-  @mutation(() => AuthError, { nullable: true })
+  @mutation(() => ValidatedNoContentResponse, { nullable: true })
   async deleteMatch(@arg("id") id: string) {
-    return handleAuthErrors(async () =>
-      Match.delete(
-        this.context,
-        id,
-        this.authorizationService,
-        this.matchRepository,
-        this.botService,
-        this.matchService,
-      ),
-    );
+    return handleAuthErrors(async () => {
+      try {
+        return await Match.delete(
+          this.context,
+          id,
+          this.authorizationService,
+          this.matchRepository,
+          this.matchService,
+        );
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            __typename: "GraphqlValidationError",
+            message: error.data.message,
+          };
+        }
+        throw error;
+      }
+    });
   }
 
   @fieldResolver()

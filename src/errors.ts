@@ -17,8 +17,14 @@ export enum HttpStatusCode {
   HTTP_500_INTERNAL_SERVER_ERROR = 500,
 }
 
+const aiArenaExceptionBaseCodec = t.type({
+  message: t.string,
+  statusCode: enumCodec(HttpStatusCode, "HttpStatusCode"),
+});
+
 export const validationErrorCodec = t.partial(
   {
+    ...aiArenaExceptionBaseCodec.props,
     fieldErrors: t.record(t.string, t.array(t.string)),
     nonFieldErrors: t.array(t.string),
   },
@@ -26,17 +32,17 @@ export const validationErrorCodec = t.partial(
 );
 
 export const assertExceptionCodec = t.partial(
-  { message: t.string, values: t.record(t.string, t.unknown) },
+  { ...aiArenaExceptionBaseCodec.props, values: t.record(t.string, t.unknown) },
   "assertExceptionCodec",
 );
 
 export const userExceptionCodec = t.partial(
-  { message: t.string, values: t.record(t.string, t.unknown) },
+  { ...aiArenaExceptionBaseCodec.props, values: t.record(t.string, t.unknown) },
   "userExceptionCodec",
 );
 
 export const authenticationErrorCodec = t.partial(
-  { message: t.string },
+  { ...aiArenaExceptionBaseCodec.props },
   "authenticationErrorCodec",
 );
 
@@ -56,10 +62,7 @@ export const aiArenaExceptionCodec = t.intersection([
       authorizationErrorCodec,
     ]),
   ]),
-  t.type({
-    message: t.string,
-    statusCode: enumCodec(HttpStatusCode, "HttpStatusCode"),
-  }),
+  aiArenaExceptionBaseCodec,
 ]);
 
 export class AiArenaException extends ApolloError {
