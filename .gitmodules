@@ -4,3 +4,6 @@
 [submodule "games/planet-war"]
 	path = games/planet-war
 	url = https://github.com/Kristofy/botWrapper.git
+[submodule "games/quoridor"]
+	path = games/quoridor
+	url = https://github.com/Kristofy/Quoridor.git
