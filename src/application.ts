@@ -1,7 +1,7 @@
 import { BootMixin } from "@loopback/boot";
 import { ApplicationConfig, CoreTags } from "@loopback/core";
 import { RestExplorerBindings, RestExplorerComponent } from "@loopback/rest-explorer";
-import { RestApplication } from "@loopback/rest";
+import { Request, RestApplication } from "@loopback/rest";
 import { AiArenaSequence } from "./sequence";
 import { GraphQLBindings, GraphQLComponent } from "@loopback/graphql";
 import { RepositoryMixin } from "@loopback/repository";
@@ -35,6 +35,19 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
       `${CoreTags.SERVICE}s.${JwtService.name}`,
     );
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
+    server.middleware<{
+      req: Request<unknown, unknown, { operationName?: string; variables?: Object }>;
+    }>((resolverData, next) => {
+      if (resolverData.root === undefined) {
+        const request = resolverData.context.req;
+        console.log(
+          `${new Date().toISOString()} ${request.method} ${request.originalUrl} ${
+            request.body.operationName
+          } vars: ${JSON.stringify(request.body.variables)}`,
+        );
+      }
+      return next();
+    });
     this.expressMiddleware("middleware.express.GraphQL", server.expressApp);
     this.bind(GraphQLBindings.GRAPHQL_CONTEXT_RESOLVER).toProvider(GraphqlContextResolverProvider);
 

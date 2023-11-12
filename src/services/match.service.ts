@@ -17,7 +17,7 @@ import { BotRepository } from "../repositories/bot.repository";
 import { matchConfigCodec } from "../common";
 import { exec } from "../utils";
 import { UserService } from "./user.service";
-import { AssertException } from "../errors";
+import { AssertException, ExecError } from "../errors";
 
 @injectable({ scope: BindingScope.SINGLETON })
 export class MatchService {
@@ -104,7 +104,9 @@ export class MatchService {
         serverConfig.runCommand.replace("%program", `"${serverConfig.programPath}"`) +
         ` "${matchConfigPath}"`;
       console.info("running", serverRunCommand);
-      await exec(serverRunCommand, { cwd: matchPath });
+      const { stdout, stderr } = await exec(serverRunCommand, { cwd: matchPath });
+      console.log(stdout);
+      console.error(stderr);
       const logFileName = "match.log";
       await this.matchRepository.updateById(match.id, {
         log: {
@@ -117,6 +119,10 @@ export class MatchService {
         },
       });
     } catch (error: unknown) {
+      if (error instanceof ExecError) {
+        console.log(error.stdout);
+        console.error(error.stderr);
+      }
       await this.logMatchRunEvent(match, MatchRunStage.RUN_ERROR, error);
     } finally {
       this.sse.emit(match.userId, { matchUpdate: match.id });
