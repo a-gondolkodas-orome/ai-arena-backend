@@ -5,17 +5,17 @@ name: Node.js CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   test:
     strategy:
       matrix:
-        node-version: [14, 16]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [ 18 ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     name: Node.js v${{ matrix.node-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
