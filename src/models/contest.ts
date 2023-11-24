@@ -386,13 +386,10 @@ export class Contest extends Entity {
   async getMatchSizeTotalAuthorized(
     context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
-    matchRepository: MatchRepository,
+    contestRepository: ContestRepository,
   ) {
     await authorizationService.authorize(context.actor, Action.READ, this, "_matchSizeTotal");
-    const matches = await matchRepository.find({
-      where: { id: { inq: this.matchIds } },
-    });
-    return matches.reduce((sumSize, match) => sumSize + match.logSize, 0);
+    return contestRepository.getMatchSizeTotal(this);
   }
 
   @field(() => ContestStatus)

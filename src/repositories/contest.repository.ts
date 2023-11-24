@@ -1,6 +1,6 @@
 import { Getter, inject } from "@loopback/core";
 import { BelongsToAccessor, ReferencesManyAccessor, repository } from "@loopback/repository";
-import { MongoDataSource } from "../datasources";
+import { MongoDataSource, MONGODB_DATABASE } from "../datasources";
 import { Options } from "@loopback/repository/src/common-types";
 import { Contest, ContestInput, ContestRelations, ContestStatus } from "../models/contest";
 import { convertObjectIdsToString } from "../utils";
@@ -14,6 +14,7 @@ import { BotRepository } from "./bot.repository";
 import { MatchRepository } from "./match.repository";
 import { Match } from "../models/match";
 import { MongodbRepository } from "./mongodb.repository";
+import * as mongodb from "mongodb";
 
 export class ContestRepository extends MongodbRepository<
   Contest,
@@ -90,5 +91,18 @@ export class ContestRepository extends MongodbRepository<
         options,
       ),
     );
+  }
+
+  async getMatchSizeTotal(contest: Contest) {
+    const mongo = (this.dataSource.connector as unknown as { client: mongodb.MongoClient }).client;
+    const result = await mongo
+      .db(MONGODB_DATABASE)
+      .collection(MatchRepository.COLLECTION_NAME)
+      .aggregate([
+        { $match: { _id: { $in: contest.matchIds.map((id) => new mongodb.ObjectId(id)) } } },
+        { $group: { _id: 1, matchSizeTotal: { $sum: { $binarySize: "$log.file" } } } },
+      ])
+      .toArray();
+    return result.length ? (result[0].matchSizeTotal as number) : 0;
   }
 }

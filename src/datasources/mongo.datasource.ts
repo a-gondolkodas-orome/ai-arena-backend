@@ -1,6 +1,8 @@
 import { inject, lifeCycleObserver, LifeCycleObserver } from "@loopback/core";
 import { juggler } from "@loopback/repository";
 
+export const MONGODB_DATABASE = "ai-arena";
+
 const config = {
   name: "mongo",
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -8,7 +10,7 @@ const config = {
   url:
     process.env.NODE_ENV === "production"
       ? process.env.MONGODB_URL
-      : "mongodb://127.0.0.1:27017/ai-arena",
+      : `mongodb://127.0.0.1:27017/${MONGODB_DATABASE}`,
   useNewUrlParser: true,
 };
 

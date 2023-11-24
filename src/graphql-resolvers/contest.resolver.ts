@@ -321,7 +321,7 @@ export class ContestResolver extends BaseResolver implements ResolverInterface<C
       return await contest.getMatchSizeTotalAuthorized(
         this.context,
         this.authorizationService,
-        this.matchRepository,
+        this.contestRepository,
       );
     } catch (error) {
       if (error instanceof AuthorizationError) return null;

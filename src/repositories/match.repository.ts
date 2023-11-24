@@ -18,6 +18,8 @@ export class MatchRepository extends MongodbRepository<
   typeof Match.prototype.id,
   MatchRelations
 > {
+  static readonly COLLECTION_NAME = "Match";
+
   constructor(
     @inject("datasources.mongo") dataSource: MongoDataSource,
     @repository.getter("UserRepository") readonly getUserRepository: Getter<UserRepository>,
