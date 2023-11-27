@@ -140,8 +140,8 @@ export class MatchResolver extends BaseResolver implements ResolverInterface<Mat
   }
 
   @fieldResolver()
-  async logString(@root() match: Match) {
-    return match.getLogStringAuthorized(this.context, this.authorizationService);
+  async logBase64(@root() match: Match) {
+    return match.getLogBase64Authorized(this.context, this.authorizationService);
   }
 
   @fieldResolver()

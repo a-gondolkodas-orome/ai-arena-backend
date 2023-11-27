@@ -197,7 +197,7 @@ export class AuthorizationService {
         if (action === Action.READ && field === "bots") return true;
         if (action === Action.READ && field === "date") return true;
         if (action === Action.READ && field === "runStatus") return true;
-        if (action === Action.READ && field === "logString") return true;
+        if (action === Action.READ && field === "logBase64") return true;
         if (action === Action.READ && field === "scoreJson") return true;
       }
       if (object.userId === actor.id && action === Action.DELETE) return true;

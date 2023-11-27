@@ -184,8 +184,8 @@ export class Match extends Entity {
   }
 
   @field(() => String, { nullable: true })
-  get logString() {
-    return this.log?.file?.toString();
+  get logBase64() {
+    return this.log?.file?.toString("base64");
   }
 
   get logSize() {
@@ -201,12 +201,12 @@ export class Match extends Entity {
     fileName: string;
   };
 
-  async getLogStringAuthorized(
+  async getLogBase64Authorized(
     context: AiArenaGraphqlContext,
     authorizationService: AuthorizationService,
   ) {
-    await authorizationService.authorize(context.actor, Action.READ, this, "logString");
-    return this.logString;
+    await authorizationService.authorize(context.actor, Action.READ, this, "logBase64");
+    return this.logBase64;
   }
 
   @property()
