@@ -17,6 +17,7 @@ import { GraphqlContextResolverProvider } from "./graphql-resolvers/graphql-cont
 import { JWTAuthenticationStrategy } from "@loopback/authentication-jwt/dist/services/jwt.auth.strategy";
 import { UserRepository } from "./repositories/user.repository";
 import { JwtService } from "./services/jwt.service";
+import { MetricsComponent } from "@loopback/metrics";
 import path from "path";
 
 export { ApplicationConfig };
@@ -28,6 +29,7 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     this.component(GraphQLComponent);
     this.component(AuthenticationComponent);
     this.component(JWTAuthenticationComponent);
+    this.component(MetricsComponent);
     this.dataSource(MongoDataSource, UserServiceBindings.DATASOURCE_NAME);
     this.bind(AiArenaBindings.AUTH_STRATEGY).toClass(JWTAuthenticationStrategy);
     this.bind(UserServiceBindings.USER_REPOSITORY).toClass(UserRepository);

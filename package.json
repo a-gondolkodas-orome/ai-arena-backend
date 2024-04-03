@@ -52,6 +52,7 @@
     "@loopback/core": "^4.0.6",
     "@loopback/filter": "^3.0.6",
     "@loopback/graphql": "^0.8.6",
+    "@loopback/metrics": "^0.14.0",
     "@loopback/repository": "^5.1.1",
     "@loopback/rest": "^12.0.6",
     "@loopback/rest-explorer": "^5.0.6",
