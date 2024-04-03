@@ -104,3 +104,52 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+elasticsearch:
+  global:
+    kibanaEnabled: true
+  master:
+    masterOnly: false
+    replicaCount: 1
+    extraEnvVars:
+      - name: ELASTICSEARCH_ADVERTISED_HOSTNAME
+        value: "$(MY_POD_NAME)"
+  data:
+    replicaCount: 0
+  coordinating:
+    replicaCount: 0
+  ingest:
+    replicaCount: 0
+
+fluent-bit:
+  config:
+    filters: |
+      [FILTER]
+          Name kubernetes
+          Match kube.*
+          Annotations Off
+          Keep_Log Off
+          K8S-Logging.Parser On
+          K8S-Logging.Exclude On
+    outputs: |
+      [OUTPUT]
+          Name es
+          Match kube.*
+          Host ai-arena-elasticsearch
+          Logstash_Format On
+          Logstash_Prefix_Key kubernetes['container_name']
+          Retry_Limit False
+          Suppress_Type_Name On
+          Replace_Dots On
+          Trace_Error On
+  
+      [OUTPUT]
+          Name es
+          Match host.*
+          Host ai-arena-elasticsearch
+          Logstash_Format On
+          Logstash_Prefix node
+          Retry_Limit False
+          Suppress_Type_Name On
+          Replace_Dots On
+          Trace_Error On

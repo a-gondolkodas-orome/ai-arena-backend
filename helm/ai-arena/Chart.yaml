@@ -27,3 +27,9 @@ dependencies:
   - name: mongodb
     version: 14.13.0
     repository: https://charts.bitnami.com/bitnami
+  - name: elasticsearch
+    version: 19.21.2
+    repository: https://charts.bitnami.com/bitnami
+  - name: fluent-bit
+    version: 0.44.0
+    repository: https://fluent.github.io/helm-charts

@@ -8,10 +8,10 @@ const config = {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   connector: require("loopback-connector-mongodb"), // see https://github.com/loopbackio/loopback-datasource-juggler/issues/1866
   url:
-    process.env.NODE_ENV === "production"
-      ? process.env.MONGODB_URL
-      : `mongodb://127.0.0.1:27017/${MONGODB_DATABASE}`,
+    process.env.NODE_ENV === "production" ? process.env.MONGODB_URL : "mongodb://127.0.0.1:27017",
   useNewUrlParser: true,
+  database: MONGODB_DATABASE,
+  authSource: "admin",
 };
 
 // Observe application's life cycle to disconnect the datasource when
