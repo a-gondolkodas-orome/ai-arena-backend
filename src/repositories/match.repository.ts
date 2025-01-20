@@ -3,9 +3,9 @@ import { BelongsToAccessor, ReferencesManyAccessor, repository } from "@loopback
 import { MongoDataSource } from "../datasources";
 import { Match, MatchInput, MatchRelations, MatchRunStage } from "../models/match";
 import { Options } from "@loopback/repository/src/common-types";
-import { convertObjectIdsToString } from "../utils";
+import { convertObjectIdsToString } from "../../shared/utils";
 import { GameRepository } from "./game.repository";
-import { ValidationError } from "../errors";
+import { ValidationError } from "../../shared/errors";
 import { BotRepository } from "./bot.repository";
 import { User } from "../models/user";
 import { MongodbRepository } from "./mongodb.repository";

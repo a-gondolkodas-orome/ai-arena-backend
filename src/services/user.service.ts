@@ -3,7 +3,7 @@ import { repository } from "@loopback/repository";
 import { securityId, UserProfile } from "@loopback/security";
 import { compare } from "bcryptjs";
 import { User } from "../models/user";
-import { AssertException, AuthenticationError } from "../errors";
+import { AssertException, AuthenticationError } from "../../shared/errors";
 import { BindingScope, injectable } from "@loopback/core";
 import { UserRepository } from "../repositories/user.repository";
 

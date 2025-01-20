@@ -1,12 +1,12 @@
 import { DefaultCrudRepository, Entity } from "@loopback/repository";
 import { Filter, FilterExcludingWhere } from "@loopback/filter";
 import { Options } from "@loopback/repository/src/common-types";
-import { convertObjectIdsToString } from "../utils";
+import { convertObjectIdsToString } from "../../shared/utils";
 
 export class MongodbRepository<
   T extends Entity,
-  ID,
-  Relations extends object = {},
+  ID extends string,
+  Relations extends object,
 > extends DefaultCrudRepository<T, ID, Relations> {
   override async find(filter?: Filter<T>, options?: Options) {
     console.log(

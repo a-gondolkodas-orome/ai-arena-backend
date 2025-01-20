@@ -3,8 +3,8 @@ import { JWTService, TokenServiceBindings } from "@loopback/authentication-jwt";
 import { promisify } from "util";
 import { Secret, sign, SignOptions, VerifyOptions, verify, Jwt } from "jsonwebtoken";
 import * as t from "io-ts";
-import { AuthorizationError } from "../errors";
-import { decode } from "../codec";
+import { AuthorizationError } from "../../shared/errors";
+import { decode } from "../../shared/codec";
 
 const signAsync = promisify<string | Buffer | object, Secret, SignOptions | undefined, string>(
   sign,
@@ -25,11 +25,11 @@ export class JwtService extends JWTService {
 
   protected secret: string;
 
-  async generateUniversalToken<T extends {}>(codec: t.Type<T>, data: T, options?: SignOptions) {
+  async generateUniversalToken<T extends object>(codec: t.Type<T>, data: T, options?: SignOptions) {
     return signAsync(codec.encode(data), this.secret, options);
   }
 
-  async verifyUniversalToken<T extends {}>(
+  async verifyUniversalToken<T extends object>(
     codec: t.Type<T>,
     token: string,
     options?: VerifyOptions,

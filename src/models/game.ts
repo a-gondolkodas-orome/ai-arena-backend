@@ -2,7 +2,7 @@ import { field, ID, inputType, objectType } from "@loopback/graphql";
 import { Entity, Model, model, property } from "@loopback/repository";
 import { createAuthErrorUnionType } from "./auth";
 import { File } from "./base";
-import { GqlValue } from "../common";
+import { GqlValue } from "../../shared/common";
 import { fromByteArray } from "base64-js";
 import {
   Action,
@@ -155,7 +155,7 @@ export class Game extends Entity {
   server: File;
 }
 
-export interface GameRelations {}
+export type GameRelations = object;
 
 export type GameWithRelations = Game & GameRelations;
 

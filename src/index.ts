@@ -1,8 +1,11 @@
 import { ApplicationConfig, AiArenaBackendApplication } from "./application";
+import { program } from "commander";
+import { appConfigCodec } from "../shared/common";
+import { decode } from "../shared/codec";
 
 export * from "./application";
 
-export async function main(options: ApplicationConfig = {}) {
+export async function main(options: ApplicationConfig) {
   const app = new AiArenaBackendApplication(options);
   await app.boot();
   await app.start();
@@ -14,8 +17,17 @@ export async function main(options: ApplicationConfig = {}) {
 }
 
 if (require.main === module) {
-  // Run the application
+  program
+    .name("ai-arena-backend")
+    .description("Backend server for AI Arena")
+    .requiredOption("--redis-url <url>", "URL of the Redis server")
+    .requiredOption("--mongodb-url <url>", "URL of the MongoDB server")
+    .parse();
+  const options = decode(appConfigCodec, program.opts(), "appConfig");
+
   const config = {
+    redisUrl: options.redisUrl,
+    mongodbUrl: options.mongodbUrl,
     rest: {
       port: +(process.env.PORT ?? 3000),
       host: process.env.HOST,

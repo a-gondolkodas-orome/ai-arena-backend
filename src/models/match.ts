@@ -3,7 +3,7 @@ import { belongsTo, Entity, Model, model, property, referencesMany } from "@loop
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User } from "./user";
 import { Game, GameWithRelations } from "./game";
-import { GqlValue } from "../common";
+import { GqlValue } from "../../shared/common";
 import { Bot, BotOrDeleted, BotWithRelations } from "./bot";
 import { registerEnumType } from "type-graphql";
 import { UserWithRelations } from "@loopback/authentication-jwt";
@@ -16,7 +16,7 @@ import { MatchRepository } from "../repositories/match.repository";
 import { MatchService } from "../services/match.service";
 import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
 import * as mongodb from "mongodb";
-import { ValidationError } from "../errors";
+import { ValidationError } from "../../shared/errors";
 
 export enum MatchRunStage {
   REGISTERED = "REGISTERED",
@@ -244,11 +244,11 @@ export class MatchInput {
 
 @objectType()
 export class CreateMatchFieldErrors {
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   gameId?: string[];
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   mapName?: string[];
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   botIds?: string[];
 }
 
@@ -265,8 +265,8 @@ export const CreateMatchResponse = createAuthErrorUnionType(
     (value as GqlValue).__typename === "Match"
       ? "Match"
       : (value as GqlValue).__typename === "CreateMatchError"
-      ? "CreateMatchError"
-      : undefined,
+        ? "CreateMatchError"
+        : undefined,
 );
 
 @objectType()

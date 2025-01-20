@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ai-arena" type="NodeJSConfigurationType" application-parameters="--redis-url redis://localhost:6379 --mongodb-url mongodb://localhost:27017/ai-arena" node-parameters="-r source-map-support/register ." working-dir="$PROJECT_DIR$">
+    <method v="2">
+      <option name="NpmBeforeRunTask" enabled="true">
+        <package-json value="$PROJECT_DIR$/package.json" />
+        <command value="run" />
+        <scripts>
+          <script value="build" />
+        </scripts>
+        <node-interpreter value="project" />
+        <package-manager value="yarn" />
+        <envs />
+      </option>
+    </method>
+  </configuration>
+</component>

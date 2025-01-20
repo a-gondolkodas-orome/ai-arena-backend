@@ -1,20 +1,21 @@
 import { Getter, inject } from "@loopback/core";
 import { BelongsToAccessor, ReferencesManyAccessor, repository } from "@loopback/repository";
-import { MongoDataSource, MONGODB_DATABASE } from "../datasources";
+import { MongoDataSource } from "../datasources";
 import { Options } from "@loopback/repository/src/common-types";
 import { Contest, ContestInput, ContestRelations, ContestStatus } from "../models/contest";
-import { convertObjectIdsToString } from "../utils";
+import { convertObjectIdsToString } from "../../shared/utils";
 import { GameRepository } from "./game.repository";
-import { ValidationError } from "../errors";
+import { ValidationError } from "../../shared/errors";
 import { Game } from "../models/game";
 import { User } from "../models/user";
 import { UserRepository } from "./user.repository";
 import { Bot } from "../models/bot";
 import { BotRepository } from "./bot.repository";
 import { MatchRepository } from "./match.repository";
-import { Match } from "../models/match";
+import { Match, MatchRunStage } from "../models/match";
 import { MongodbRepository } from "./mongodb.repository";
 import * as mongodb from "mongodb";
+import { MONGODB_DATABASE } from "../../shared/common";
 
 export class ContestRepository extends MongodbRepository<
   Contest,
@@ -93,6 +94,11 @@ export class ContestRepository extends MongodbRepository<
     );
   }
 
+  async updateWithVersionCheck(entity: Contest, options?: Options): Promise<boolean> {
+    return !!(await this.updateAll(entity, { id: entity.id, _version: entity._version++ }, options))
+      .count;
+  }
+
   async getMatchSizeTotal(contest: Contest) {
     const mongo = (this.dataSource.connector as unknown as { client: mongodb.MongoClient }).client;
     const result = await mongo
@@ -104,5 +110,23 @@ export class ContestRepository extends MongodbRepository<
       ])
       .toArray();
     return result.length ? (result[0].matchSizeTotal as number) : 0;
+  }
+
+  async getCompletedMatchCount(contest: Contest) {
+    const mongo = (this.dataSource.connector as unknown as { client: mongodb.MongoClient }).client;
+    return mongo
+      .db(MONGODB_DATABASE)
+      .collection(MatchRepository.COLLECTION_NAME)
+      .countDocuments({
+        _id: { $in: contest.matchIds.map((id) => new mongodb.ObjectId(id)) },
+        "runStatus.stage": {
+          $in: [
+            MatchRunStage.RUN_SUCCESS,
+            MatchRunStage.PREPARE_GAME_SERVER_ERROR,
+            MatchRunStage.PREPARE_BOTS_ERROR,
+            MatchRunStage.RUN_ERROR,
+          ],
+        },
+      });
   }
 }

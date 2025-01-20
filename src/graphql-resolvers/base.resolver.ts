@@ -1,4 +1,4 @@
-import { AssertException, AuthenticationError } from "../errors";
+import { AssertException, AuthenticationError } from "../../shared/errors";
 import { ResolverData } from "@loopback/graphql";
 import { Actor, isActor } from "../services/authorization.service";
 import { User } from "../models/user";

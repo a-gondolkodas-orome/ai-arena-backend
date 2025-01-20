@@ -3,9 +3,9 @@ import { BelongsToAccessor, repository } from "@loopback/repository";
 import { MongoDataSource } from "../datasources";
 import { Bot, BotInput, BotRelations, BotSubmitStage } from "../models/bot";
 import { DataObject, Options } from "@loopback/repository/src/common-types";
-import { convertObjectIdsToString } from "../utils";
+import { convertObjectIdsToString } from "../../shared/utils";
 import { GameRepository } from "./game.repository";
-import { ValidationError } from "../errors";
+import { ValidationError } from "../../shared/errors";
 import { User } from "../models/user";
 import { UserRepository } from "./user.repository";
 import { Game } from "../models/game";
@@ -61,7 +61,7 @@ export class BotRepository extends MongodbRepository<Bot, typeof Bot.prototype.i
     );
   }
 
-  async create(entity: DataObject<Bot>, options?: Options) {
+  async create(entity: DataObject<Bot>) {
     return convertObjectIdsToString(await super.create(entity));
   }
 }

@@ -6,7 +6,7 @@ import { Condition, Entity, repository } from "@loopback/repository";
 import { authenticateRequest } from "../authentication/authentication";
 import { UserRepository } from "../repositories/user.repository";
 import DataLoader from "dataloader";
-import { AssertException } from "../errors";
+import { AssertException } from "../../shared/errors";
 import { MongodbRepository } from "../repositories/mongodb.repository";
 import { User } from "../models/user";
 import { Game } from "../models/game";
@@ -50,7 +50,7 @@ export class GraphqlContextResolverProvider implements Provider<ContextFunction<
     return ids.every((id) => typeof id === "string");
   }
 
-  protected createDataLoader<T extends Entity & { id: string }, Relations extends {}>(
+  protected createDataLoader<T extends Entity & { id: string }, Relations extends object>(
     mongodbRepository: MongodbRepository<T, string, Relations>,
   ) {
     return new DataLoader<string, T | null>(async (ids) => {

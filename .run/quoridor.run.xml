@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="quoridor" type="NodeJSConfigurationType" node-parameters="-r source-map-support/register ." working-dir="$PROJECT_DIR$/games/quoridor">
+    <method v="2">
+      <option name="NpmBeforeRunTask" enabled="true">
+        <package-json value="$PROJECT_DIR$/games/quoridor/package.json" />
+        <command value="run" />
+        <scripts>
+          <script value="build" />
+        </scripts>
+        <node-interpreter value="project" />
+        <package-manager value="npm" />
+        <envs />
+      </option>
+    </method>
+  </configuration>
+</component>

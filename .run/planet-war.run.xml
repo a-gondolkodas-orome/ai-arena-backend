@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="planet-war" type="NodeJSConfigurationType" application-parameters="sample-match-config.json" node-parameters="-r source-map-support/register ." working-dir="$PROJECT_DIR$/games/planet-war">
+    <method v="2">
+      <option name="NpmBeforeRunTask" enabled="true">
+        <package-json value="$PROJECT_DIR$/games/planet-war/package.json" />
+        <command value="run" />
+        <scripts>
+          <script value="build" />
+        </scripts>
+        <node-interpreter value="project" />
+        <package-manager value="npm" />
+        <envs />
+      </option>
+    </method>
+  </configuration>
+</component>

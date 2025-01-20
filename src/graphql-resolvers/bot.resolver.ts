@@ -14,7 +14,7 @@ import { repository } from "@loopback/repository";
 import { CreateBotResponse, Bot, BotInput, BotResponse, BotsResponse } from "../models/bot";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
-import { ValidationError, validationErrorCodec } from "../errors";
+import { ValidationError, validationErrorCodec } from "../../shared/errors";
 import * as t from "io-ts";
 import { User } from "../models/user";
 import { Game } from "../models/game";

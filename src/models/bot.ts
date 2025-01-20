@@ -3,7 +3,7 @@ import { belongsTo, Entity, Model, model, property } from "@loopback/repository"
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
 import { User, UserWithRelations } from "./user";
 import { Game, GameWithRelations } from "./game";
-import { GqlValue } from "../common";
+import { GqlValue } from "../../shared/common";
 import { File } from "./base";
 import { createUnionType, registerEnumType } from "type-graphql";
 import {
@@ -15,7 +15,7 @@ import { BotService } from "../services/bot.service";
 import { BotRepository } from "../repositories/bot.repository";
 import { UserService } from "../services/user.service";
 import { AiArenaGraphqlContext } from "../graphql-resolvers/graphql-context-resolver.provider";
-import { ValidationError } from "../errors";
+import { ValidationError } from "../../shared/errors";
 
 export enum BotSubmitStage {
   REGISTERED = "REGISTERED",
@@ -205,9 +205,9 @@ export class BotWithUploadLink {
 
 @objectType()
 export class CreateBotFieldErrors {
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   name?: string[];
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   gameId?: string[];
 }
 
@@ -224,8 +224,8 @@ export const CreateBotResponse = createAuthErrorUnionType(
     (value as GqlValue).__typename === "BotWithUploadLink"
       ? "BotWithUploadLink"
       : (value as GqlValue).__typename === "CreateBotError"
-      ? "CreateBotError"
-      : undefined,
+        ? "CreateBotError"
+        : undefined,
 );
 
 @objectType()

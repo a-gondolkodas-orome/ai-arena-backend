@@ -1,7 +1,7 @@
 import { ClassType, field, inputType, InterfaceType, objectType } from "@loopback/graphql";
 import { createUnionType } from "type-graphql";
-import { AuthenticationError, AuthorizationError } from "../errors";
-import { GqlValue } from "../common";
+import { AuthenticationError, AuthorizationError } from "../../shared/errors";
+import { GqlValue } from "../../shared/common";
 
 function resolveAuthErrorType(value: unknown) {
   if ((value as GqlValue).__typename === "GraphqlAuthenticationError")
@@ -80,10 +80,10 @@ export class RegistrationSuccess {
 
 @objectType()
 export class RegistrationFieldErrors {
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   username?: string[];
 
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   email?: string[];
 }
 
@@ -92,7 +92,7 @@ export class RegistrationError extends GraphqlError {
   @field({ nullable: true })
   fieldErrors?: RegistrationFieldErrors;
 
-  @field(() => [String!], { nullable: true })
+  @field(() => [String], { nullable: true })
   nonFieldErrors?: string[];
 }
 
@@ -103,8 +103,8 @@ export const RegistrationResponse = createAuthErrorUnionType(
     (value as GqlValue).__typename === "RegistrationSuccess"
       ? "RegistrationSuccess"
       : (value as GqlValue).__typename === "RegistrationError"
-      ? "RegistrationError"
-      : undefined,
+        ? "RegistrationError"
+        : undefined,
 );
 
 @inputType()

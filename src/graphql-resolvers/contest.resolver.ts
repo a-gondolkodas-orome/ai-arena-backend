@@ -26,7 +26,7 @@ import {
   UpdateContestStatusResponse,
   StartContestResponse,
 } from "../models/contest";
-import { AuthorizationError, ValidationError, validationErrorCodec } from "../errors";
+import { AuthorizationError, ValidationError, validationErrorCodec } from "../../shared/errors";
 import * as t from "io-ts";
 import { Game } from "../models/game";
 import { BotOrDeleted } from "../models/bot";

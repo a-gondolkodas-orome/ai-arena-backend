@@ -10,12 +10,11 @@ import {
 import multer from "multer";
 import { inject, intercept, service } from "@loopback/core";
 import { repository } from "@loopback/repository";
-import { HttpStatusCode } from "../errors";
+import { HttpStatusCode } from "../../shared/errors";
 import { BotSubmitStage } from "../models/bot";
 import { Action, Actor, AuthorizationService } from "../services/authorization.service";
 import { BotService } from "../services/bot.service";
 import { BotRepository } from "../repositories/bot.repository";
-import { MatchService } from "../services/match.service";
 
 const multerInterceptor = toInterceptor(
   multer({ storage: multer.memoryStorage() }).single("sourceFile"),
@@ -27,7 +26,6 @@ export class BotController {
   constructor(
     @service() protected authorizationService: AuthorizationService,
     @service() protected botService: BotService,
-    @service() protected matchService: MatchService,
     @repository("BotRepository") protected botRepository: BotRepository,
     @inject(RestBindings.Http.RESPONSE) protected response: Response,
   ) {}
@@ -86,11 +84,11 @@ export class BotController {
       },
       submitStatus: {
         stage: BotSubmitStage.SOURCE_UPLOAD_DONE,
-        log: bot.submitStatus.log,
+        ...(bot.submitStatus.log && { log: bot.submitStatus.log }),
       },
     });
     this.response.status(HttpStatusCode.HTTP_201_CREATED).send();
-    this.matchService.checkBot(tokenData.bot.id).catch((error) => console.error(error));
+    this.botService.checkBot(tokenData.bot.id).catch((error) => console.error(error));
     return this.response;
   }
 }

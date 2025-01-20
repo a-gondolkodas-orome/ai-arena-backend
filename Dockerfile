@@ -29,6 +29,5 @@ ENV HOST=0.0.0.0 PORT=3000
 ENV NODE_ENV=production
 
 EXPOSE ${PORT}
-ENTRYPOINT [ "yarn", "run", "start" ]
 
-LABEL org.opencontainers.image.source https://github.com/a-gondolkodas-orome/ai-arena-backend
+LABEL org.opencontainers.image.source=https://github.com/a-gondolkodas-orome/ai-arena-backend

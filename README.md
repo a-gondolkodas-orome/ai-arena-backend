@@ -5,8 +5,6 @@ This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/
 
 ## Setup
 
-Install MongoDB: https://www.mongodb.com/docs/manual/installation/#mongodb-installation-tutorials
-
 Install NVM (Node Version Manager)
 * Linux https://github.com/nvm-sh/nvm#installing-and-updating
 * Windows https://github.com/coreybutler/nvm-windows#installation--upgrades
@@ -24,15 +22,24 @@ git clone --recurse-submodules https://github.com/leanil/ai-arena-backend.git
 
 Install the dependencies: run `yarn` in the repo directory (`ai-arena-backend`)
 
-## Run the application
+## Run - native
+Install and run MongoDB: https://www.mongodb.com/docs/manual/installation/#mongodb-installation-tutorials
 
+Install and run Redis: https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
+
+Build and run the application:
 ```sh
-yarn start
+yarn build
+node -r source-map-support/register dist/src/index.js --redis-url redis://localhost:6379 --mongodb-url mongodb://localhost:27017/ai-arena
 ```
 
-You can also run `node .` to skip the build step.
+Open http://localhost:3000/graphql in your browser to verify.
 
-Open http://127.0.0.1:3000 in your browser.
+
+Run at least one worker:
+```sh
+node -r source-map-support/register dist/worker/src/worker.js --redis-url redis://localhost:6379 --mongodb-url mongodb://localhost:27017/ai-arena
+```
 
 ## Rebuild the project
 

@@ -1,5 +1,4 @@
-import { ApplicationConfig } from "@loopback/core";
-import { AiArenaBackendApplication } from "./application";
+import { AiArenaBackendApplication, ApplicationConfig } from "./application";
 
 /**
  * Export the OpenAPI spec from the application
@@ -10,6 +9,8 @@ async function exportOpenApiSpec(): Promise<void> {
       port: +(process.env.PORT ?? 3000),
       host: process.env.HOST ?? "localhost",
     },
+    redisUrl: "redis://localhost:6379",
+    mongodbUrl: "mongodb://localhost:27017/ai-arena",
   };
   const outFile = process.argv[2] ?? "";
   const app = new AiArenaBackendApplication(config);

@@ -14,7 +14,7 @@ import { repository } from "@loopback/repository";
 import { Match, MatchInput, MatchResponse, CreateMatchResponse } from "../models/match";
 import { BaseResolver } from "./base.resolver";
 import { handleAuthErrors } from "../models/auth";
-import { ValidationError, validationErrorCodec } from "../errors";
+import { ValidationError, validationErrorCodec } from "../../shared/errors";
 import * as t from "io-ts";
 import { MatchesResponse } from "../models/match";
 import { User } from "../models/user";

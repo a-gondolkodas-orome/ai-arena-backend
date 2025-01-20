@@ -9,12 +9,12 @@ import {
   handleAuthErrors,
 } from "../models/auth";
 import { SecurityBindings, UserProfile } from "@loopback/security";
-import { AuthenticationError, ValidationError, validationErrorCodec } from "../errors";
+import { AuthenticationError, ValidationError, validationErrorCodec } from "../../shared/errors";
 import * as t from "io-ts";
 import { Actor, AuthorizationService } from "../services/authorization.service";
 import { BaseResolver } from "./base.resolver";
 import { User, UserResponse } from "../models/user";
-import { notNull } from "../utils";
+import { notNull } from "../../shared/utils";
 import { JwtService } from "../services/jwt.service";
 import { UserService } from "../services/user.service";
 import { UserRepository } from "../repositories/user.repository";

@@ -6,9 +6,9 @@ import fsp from "fs/promises";
 import { promisify } from "util";
 import child_process from "child_process";
 import * as t from "io-ts";
-import { decodeJson } from "../codec";
+import { decodeJson } from "../../shared/codec";
 import md5 from "md5";
-import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
+import { EXECUTOR_SYSTEM, Role } from "../../shared/common";
 import { MatchService } from "../services/match.service";
 import { AiArenaBackendApplication } from "../application";
 import fs from "fs";
@@ -18,6 +18,7 @@ import { UserRepository } from "../repositories/user.repository";
 import { GameRepository } from "../repositories/game.repository";
 import { UserService } from "../services/user.service";
 import * as crypto from "crypto";
+import { BotService } from "../services/bot.service";
 
 const exec = promisify(child_process.exec);
 
@@ -31,7 +32,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
     @repository(GameRepository) protected gameRepository: GameRepository,
     @repository(BotRepository) protected botRepository: BotRepository,
     @service() protected userService: UserService,
-    @service() protected matchService: MatchService,
+    @service() protected botService: BotService,
   ) {}
 
   async start(): Promise<void> {
@@ -129,7 +130,7 @@ export class DatabaseSeedObserver implements LifeCycleObserver {
             content: sourceCode,
           },
         });
-        await this.matchService.checkBot(bot.id);
+        await this.botService.checkBot(bot.id);
       }
       const publicFolderPath = path.join(gamePath, "public");
       if (fs.existsSync(publicFolderPath))

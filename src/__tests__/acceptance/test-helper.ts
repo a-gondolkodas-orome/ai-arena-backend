@@ -12,6 +12,8 @@ export async function setupApplication(): Promise<AppWithClient> {
 
   const app = new AiArenaBackendApplication({
     rest: restConfig,
+    redisUrl: "redis://localhost:6379",
+    mongodbUrl: "mongodb://localhost:27017/ai-arena",
   });
 
   await app.boot();

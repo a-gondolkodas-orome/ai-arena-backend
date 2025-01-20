@@ -3,15 +3,14 @@ import { Match, MatchInput, MatchWithRelations } from "../models/match";
 import { Bot, BotInput, BotWithRelations } from "../models/bot";
 import { RegistrationInput } from "../models/auth";
 import { repository } from "@loopback/repository";
-import { AuthenticationError, AuthorizationError } from "../errors";
+import { AuthenticationError, AuthorizationError } from "../../shared/errors";
 import { Contest, ContestInput, ContestWithRelations } from "../models/contest";
 import { Game, GameInput, GameWithRelations } from "../models/game";
 import { BindingScope, injectable } from "@loopback/core";
 import { BotRepository } from "../repositories/bot.repository";
 import { ContestRepository } from "../repositories/contest.repository";
 import { UserRepository } from "../repositories/user.repository";
-
-export const EXECUTOR_SYSTEM = "EXECUTOR_SYSTEM";
+import { Role } from "../../shared/common";
 
 export type Actor = User | null;
 
@@ -34,14 +33,14 @@ export type ResourceObject = User | Game | Bot | Match | Contest;
 type ResourceObjectWithRelations<T> = T extends User
   ? UserWithRelations
   : T extends Game
-  ? GameWithRelations
-  : T extends Bot
-  ? BotWithRelations
-  : T extends Match
-  ? MatchWithRelations
-  : T extends Contest
-  ? ContestWithRelations
-  : never;
+    ? GameWithRelations
+    : T extends Bot
+      ? BotWithRelations
+      : T extends Match
+        ? MatchWithRelations
+        : T extends Contest
+          ? ContestWithRelations
+          : never;
 
 export type CreateResourceObject =
   | RegistrationInput
@@ -56,11 +55,6 @@ export enum ResourceCollection {
   BOTS = "BOTS",
   MATCHES = "MATCHES",
   CONTESTS = "CONTESTS",
-}
-
-export enum Role {
-  USER = "USER",
-  ADMIN = "ADMIN",
 }
 
 @injectable({ scope: BindingScope.SINGLETON })

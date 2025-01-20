@@ -4,9 +4,9 @@ import { User } from "../models/user";
 import { Options } from "@loopback/repository/src/common-types";
 import { genSalt, hash } from "bcryptjs";
 import { RegistrationInput } from "../models/auth";
-import { ValidationError } from "../errors";
-import { notNull } from "../utils";
-import { EXECUTOR_SYSTEM, Role } from "../services/authorization.service";
+import { ValidationError } from "../../shared/errors";
+import { notNull } from "../../shared/utils";
+import { EXECUTOR_SYSTEM, Role } from "../../shared/common";
 import { UserRelations } from "@loopback/authentication-jwt";
 import { MongodbRepository } from "./mongodb.repository";
 

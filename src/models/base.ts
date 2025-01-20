@@ -1,7 +1,7 @@
 import { Model, model, property } from "@loopback/repository";
 import { field, objectType } from "@loopback/graphql";
 import { createAuthErrorUnionType, GraphqlError } from "./auth";
-import { GqlValue } from "../common";
+import { GqlValue } from "../../shared/common";
 
 @objectType()
 @model()

@@ -1,5 +1,5 @@
 import { BootMixin } from "@loopback/boot";
-import { ApplicationConfig, CoreTags } from "@loopback/core";
+import { ApplicationConfig as LoopbackAppConfig, CoreTags } from "@loopback/core";
 import { RestExplorerBindings, RestExplorerComponent } from "@loopback/rest-explorer";
 import { Request, RestApplication } from "@loopback/rest";
 import { AiArenaSequence } from "./sequence";
@@ -19,12 +19,19 @@ import { UserRepository } from "./repositories/user.repository";
 import { JwtService } from "./services/jwt.service";
 import { MetricsComponent } from "@loopback/metrics";
 import path from "path";
+import { appConfigCodec } from "../shared/common";
+import * as t from "io-ts";
+
+type ApplicationConfig = LoopbackAppConfig & t.TypeOf<typeof appConfigCodec>;
 
 export { ApplicationConfig };
 
 export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApplication)) {
-  constructor(options: ApplicationConfig = {}) {
+  static config: ApplicationConfig;
+
+  constructor(options: ApplicationConfig) {
     super(options);
+    AiArenaBackendApplication.config = options;
 
     this.component(GraphQLComponent);
     this.component(AuthenticationComponent);
@@ -38,7 +45,7 @@ export class AiArenaBackendApplication extends BootMixin(RepositoryMixin(RestApp
     );
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     server.middleware<{
-      req: Request<unknown, unknown, { operationName?: string; variables?: Object }>;
+      req: Request<unknown, unknown, { operationName?: string; variables?: object }>;
     }>((resolverData, next) => {
       if (resolverData.root === undefined) {
         const request = resolverData.context.req;
